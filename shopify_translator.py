@@ -563,10 +563,37 @@ class ShopifyTranslator:
         """Create cache key for translation"""
         return f"{text}||{target_lang}||{mode}"
 
+    def remove_personal_names(self, text: str, field_name: str = "") -> str:
+        """Remove personal names from titles and descriptions for professional branding"""
+        if field_name not in ['Title', 'Body (HTML)']:
+            return text
+
+        # Common patterns where names appear in product titles
+        patterns = [
+            r'\s*\|\s*[A-Z][a-z]+\s*$',  # | Charles at end
+            r'\s*-\s*[A-Z][a-z]+\s*$',   # - Charles at end
+            r'\s*by\s+[A-Z][a-z]+\s*$',  # by Charles at end
+            r'\s*\|\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s*$',  # | John Smith at end
+            r'\s*-\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s*$',   # - John Smith at end
+            r'\s*by\s+[A-Z][a-z]+\s+[A-Z][a-z]+\s*$',  # by John Smith at end
+        ]
+
+        cleaned_text = text
+        for pattern in patterns:
+            cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
+
+        # Remove any trailing pipes or dashes left over
+        cleaned_text = re.sub(r'\s*[\|\-]\s*$', '', cleaned_text)
+
+        return cleaned_text.strip()
+
     def translate_text(self, text: str, settings: Dict, field_name: str = "") -> str:
         """Translate text using OpenAI API with caching"""
         if pd.isna(text) or text == "":
             return text
+
+        # Remove personal names from titles and descriptions
+        text = self.remove_personal_names(str(text), field_name)
 
         # Check for standard Option Names (Color, Size, etc.) for consistent branding
         if field_name in ['Option1 Name', 'Option2 Name', 'Option3 Name']:
@@ -676,23 +703,25 @@ IMPORTANT:
                 if field not in self.df.columns:
                     continue
 
-                value = self.df.at[first_row_idx, field]
+                # Special handling for Option Names and Values (variants)
+                if field in ['Option1 Name', 'Option2 Name', 'Option3 Name',
+                             'Option1 Value', 'Option2 Value', 'Option3 Value']:
+                    # Get all unique values for this field across all variants
+                    unique_values = product_rows[field].dropna().unique()
 
-                if pd.notna(value) and value != "":
-                    translated = self.translate_text(str(value), settings, field)
-                    self.df.at[first_row_idx, field] = translated
-
-                    # For variant rows, only translate if they have different values
-                    if field in ['Option1 Value', 'Option2 Value', 'Option3 Value']:
-                        # Get unique values for this option
-                        unique_values = product_rows[field].dropna().unique()
-
-                        for unique_val in unique_values:
-                            if unique_val != value:  # Don't retranslate the first one
-                                translated_val = self.translate_text(str(unique_val), settings, field)
-                                # Apply to all rows with this value
-                                mask = (self.df['Handle'] == handle) & (self.df[field] == unique_val)
-                                self.df.loc[mask, field] = translated_val
+                    # Translate each unique value once and apply to all matching rows
+                    for unique_val in unique_values:
+                        if unique_val and str(unique_val).strip():
+                            translated_val = self.translate_text(str(unique_val), settings, field)
+                            # Apply translation to ALL rows with this value
+                            mask = (self.df['Handle'] == handle) & (self.df[field] == unique_val)
+                            self.df.loc[mask, field] = translated_val
+                else:
+                    # For non-variant fields, translate only the first row
+                    value = self.df.at[first_row_idx, field]
+                    if pd.notna(value) and value != "":
+                        translated = self.translate_text(str(value), settings, field)
+                        self.df.at[first_row_idx, field] = translated
 
             pbar.update(1)
 
