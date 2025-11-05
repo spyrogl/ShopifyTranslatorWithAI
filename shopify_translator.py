@@ -29,6 +29,130 @@ OUTPUT_DIR = "translated_outputs"
 # Standard sizes that should not be translated
 STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', '4XL', '5XL']
 
+# Standard Option Names - Consistent translations across all products for professional branding
+STANDARD_OPTION_NAMES = {
+    'greek': {
+        'color': 'Χρώμα',
+        'colour': 'Χρώμα',
+        'size': 'Μέγεθος',
+        'material': 'Υλικό',
+        'style': 'Στυλ',
+        'pattern': 'Μοτίβο',
+        'finish': 'Φινίρισμα',
+        'type': 'Τύπος',
+        'length': 'Μήκος',
+        'width': 'Πλάτος',
+        'weight': 'Βάρος',
+        'volume': 'Όγκος',
+        'capacity': 'Χωρητικότητα',
+        'fit': 'Εφαρμογή',
+        'cut': 'Κόψιμο',
+        'sleeve': 'Μανίκι',
+        'neck': 'Λαιμός',
+        'waist': 'Μέση',
+    },
+    'dutch': {
+        'color': 'Kleur',
+        'colour': 'Kleur',
+        'size': 'Maat',
+        'material': 'Materiaal',
+        'style': 'Stijl',
+        'pattern': 'Patroon',
+        'finish': 'Afwerking',
+        'type': 'Type',
+        'length': 'Lengte',
+        'width': 'Breedte',
+        'weight': 'Gewicht',
+        'volume': 'Volume',
+        'capacity': 'Capaciteit',
+        'fit': 'Pasvorm',
+        'cut': 'Snit',
+        'sleeve': 'Mouw',
+        'neck': 'Hals',
+        'waist': 'Taille',
+    },
+    'german': {
+        'color': 'Farbe',
+        'colour': 'Farbe',
+        'size': 'Größe',
+        'material': 'Material',
+        'style': 'Stil',
+        'pattern': 'Muster',
+        'finish': 'Oberfläche',
+        'type': 'Typ',
+        'length': 'Länge',
+        'width': 'Breite',
+        'weight': 'Gewicht',
+        'volume': 'Volumen',
+        'capacity': 'Kapazität',
+        'fit': 'Passform',
+        'cut': 'Schnitt',
+        'sleeve': 'Ärmel',
+        'neck': 'Hals',
+        'waist': 'Taille',
+    },
+    'french': {
+        'color': 'Couleur',
+        'colour': 'Couleur',
+        'size': 'Taille',
+        'material': 'Matériau',
+        'style': 'Style',
+        'pattern': 'Motif',
+        'finish': 'Finition',
+        'type': 'Type',
+        'length': 'Longueur',
+        'width': 'Largeur',
+        'weight': 'Poids',
+        'volume': 'Volume',
+        'capacity': 'Capacité',
+        'fit': 'Coupe',
+        'cut': 'Coupe',
+        'sleeve': 'Manche',
+        'neck': 'Col',
+        'waist': 'Taille',
+    },
+    'spanish': {
+        'color': 'Color',
+        'colour': 'Color',
+        'size': 'Talla',
+        'material': 'Material',
+        'style': 'Estilo',
+        'pattern': 'Patrón',
+        'finish': 'Acabado',
+        'type': 'Tipo',
+        'length': 'Longitud',
+        'width': 'Ancho',
+        'weight': 'Peso',
+        'volume': 'Volumen',
+        'capacity': 'Capacidad',
+        'fit': 'Ajuste',
+        'cut': 'Corte',
+        'sleeve': 'Manga',
+        'neck': 'Cuello',
+        'waist': 'Cintura',
+    },
+    'italian': {
+        'color': 'Colore',
+        'colour': 'Colore',
+        'size': 'Taglia',
+        'material': 'Materiale',
+        'style': 'Stile',
+        'pattern': 'Motivo',
+        'finish': 'Finitura',
+        'type': 'Tipo',
+        'length': 'Lunghezza',
+        'width': 'Larghezza',
+        'weight': 'Peso',
+        'volume': 'Volume',
+        'capacity': 'Capacità',
+        'fit': 'Vestibilità',
+        'cut': 'Taglio',
+        'sleeve': 'Manica',
+        'neck': 'Collo',
+        'waist': 'Vita',
+    }
+}
+
 # Fields that can be translated
 TRANSLATABLE_FIELDS = [
     'Title',
@@ -443,6 +567,19 @@ class ShopifyTranslator:
         """Translate text using OpenAI API with caching"""
         if pd.isna(text) or text == "":
             return text
+
+        # Check for standard Option Names (Color, Size, etc.) for consistent branding
+        if field_name in ['Option1 Name', 'Option2 Name', 'Option3 Name']:
+            target_lang = settings['target_language']
+            text_lower = str(text).lower().strip()
+
+            if target_lang in STANDARD_OPTION_NAMES:
+                if text_lower in STANDARD_OPTION_NAMES[target_lang]:
+                    standard_translation = STANDARD_OPTION_NAMES[target_lang][text_lower]
+                    # Cache this for consistency
+                    cache_key = self.create_cache_key(str(text), target_lang, settings['translation_mode'])
+                    self.cache[cache_key] = standard_translation
+                    return standard_translation
 
         # Check cache
         cache_key = self.create_cache_key(str(text), settings['target_language'], settings['translation_mode'])
