@@ -1,0 +1,36 @@
+# Configuration files (contains API keys)
+config.json
+
+# Translation cache
+translation_cache.json
+
+# Backup files
+backups/
+
+# Translated outputs
+translated_outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
