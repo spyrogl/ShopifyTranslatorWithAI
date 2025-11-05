@@ -35,8 +35,11 @@ TRANSLATABLE_FIELDS = [
     'Body (HTML)',
     'Type',
     'Tags',
+    'Option1 Name',
     'Option1 Value',
+    'Option2 Name',
     'Option2 Value',
+    'Option3 Name',
     'Option3 Value',
     'Image Alt Text',
     'SEO Title',
@@ -273,7 +276,7 @@ class ShopifyTranslator:
         print("  - Enter numbers separated by commas (e.g., 1,2,5)")
         print("  - Enter 'all' for all fields")
         print("  - Enter 'basic' for Title and Body only")
-        print(f"  - Press Enter for recommended: Title, Body, Type, Option1 Value{Style.RESET_ALL}\n")
+        print(f"  - Press Enter for recommended: Title, Body, Type, Option Names & Values{Style.RESET_ALL}\n")
 
         selection = input(f"{Fore.YELLOW}Select fields: {Style.RESET_ALL}").strip().lower()
 
@@ -283,14 +286,14 @@ class ShopifyTranslator:
             selected = [f for f in ['Title', 'Body (HTML)'] if f in available_fields]
         elif selection == '':
             # Recommended fields
-            selected = [f for f in ['Title', 'Body (HTML)', 'Type', 'Option1 Value'] if f in available_fields]
+            selected = [f for f in ['Title', 'Body (HTML)', 'Type', 'Option1 Name', 'Option1 Value', 'Option2 Name', 'Option2 Value'] if f in available_fields]
         else:
             try:
                 indices = [int(x.strip()) - 1 for x in selection.split(',')]
                 selected = [available_fields[i] for i in indices if 0 <= i < len(available_fields)]
             except:
                 self.print_error("Invalid selection, using recommended fields")
-                selected = [f for f in ['Title', 'Body (HTML)', 'Type', 'Option1 Value'] if f in available_fields]
+                selected = [f for f in ['Title', 'Body (HTML)', 'Type', 'Option1 Name', 'Option1 Value', 'Option2 Name', 'Option2 Value'] if f in available_fields]
 
         self.print_success(f"Selected {len(selected)} fields: {', '.join(selected)}")
         return selected
