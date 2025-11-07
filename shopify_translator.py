@@ -150,6 +150,26 @@ STANDARD_OPTION_NAMES = {
         'sleeve': 'Manica',
         'neck': 'Collo',
         'waist': 'Vita',
+    },
+    'chilean': {
+        'color': 'Color',
+        'colour': 'Color',
+        'size': 'Talla',
+        'material': 'Material',
+        'style': 'Estilo',
+        'pattern': 'Patrón',
+        'finish': 'Acabado',
+        'type': 'Tipo',
+        'length': 'Largo',
+        'width': 'Ancho',
+        'weight': 'Peso',
+        'volume': 'Volumen',
+        'capacity': 'Capacidad',
+        'fit': 'Calce',
+        'cut': 'Corte',
+        'sleeve': 'Manga',
+        'neck': 'Cuello',
+        'waist': 'Cintura',
     }
 }
 
@@ -221,6 +241,15 @@ Use 'usted' form (formal you) for respect."""
 Use passionate, expressive language.
 Emphasize fashion, quality, and Italian design sensibility.
 Use 'Lei' form (formal you) for elegance."""
+    },
+    'chilean': {
+        'name': 'Español Chileno (Chilean Spanish)',
+        'code': 'es-CL',
+        'prompt': """Target audience: Chilean consumers who value authenticity and quality.
+Use warm, friendly Chilean Spanish with local expressions when appropriate.
+Emphasize value, durability, and style that fits Chilean lifestyle.
+Use 'usted' form (formal you) for respect, but keep tone approachable.
+Incorporate Chilean Spanish nuances and vocabulary where natural."""
     }
 }
 
@@ -621,7 +650,36 @@ class ShopifyTranslator:
         lang_info = MARKET_ADAPTATIONS[settings['target_language']]
 
         if settings['translation_mode'] == 'market_adaptation':
-            system_prompt = f"""You are a professional e-commerce translator specializing in product descriptions.
+            # Special formatting for product descriptions (Body HTML)
+            if field_name == 'Body (HTML)':
+                system_prompt = f"""You are a professional e-commerce translator specializing in product descriptions.
+Translate the following text to {lang_info['name']}.
+
+{lang_info['prompt']}
+
+{"Special context: " + settings['special_instructions'] if settings['special_instructions'] else ""}
+
+CRITICAL FORMATTING REQUIREMENTS:
+- Structure the translation with:
+  1. One short introductory paragraph (2-3 sentences maximum)
+  2. Followed by EXACTLY 4 bullet points (no more, no less)
+- Use HTML tags: <p> for paragraph, <ul> and <li> for bullet points
+- Format example:
+  <p>Short description here.</p>
+  <ul>
+  <li>First key feature</li>
+  <li>Second key feature</li>
+  <li>Third key feature</li>
+  <li>Fourth key feature</li>
+  </ul>
+
+IMPORTANT:
+- Preserve ALL HTML tags exactly
+- MUST have exactly 4 bullet points
+- Keep description concise and compelling
+- Return ONLY the translated HTML, no explanations"""
+            else:
+                system_prompt = f"""You are a professional e-commerce translator specializing in product descriptions.
 Translate the following text to {lang_info['name']}.
 
 {lang_info['prompt']}
