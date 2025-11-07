@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Shopify Product Translator with AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f7f7f7;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            background: #fff;
+        }
+
+        .tab.active {
+            background: #fff;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .file-upload {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            background: #f5f7ff;
+            border-color: #764ba2;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload-label {
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .checkbox-item input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .radio-group {
+            margin-top: 15px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-item:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .radio-item input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .info-box {
+            background: #f5f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f7f7f7;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .status-message {
+            text-align: center;
+            font-size: 1.1em;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .result-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .result-box.active {
+            display: block;
+        }
+
+        .result-box h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .error-box {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-box.active {
+            display: block;
+        }
+
+        .error-box h3 {
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Shopify Product Translator</h1>
+            <p>Translate your products to 7 languages with AI-powered market adaptation</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('setup')">📝 Setup</div>
+            <div class="tab" onclick="showTab('fields')">☑️ Fields</div>
+            <div class="tab" onclick="showTab('options')">⚙️ Options</div>
+            <div class="tab" onclick="showTab('translate')">🚀 Translate</div>
+        </div>
+
+        <!-- Setup Tab -->
+        <div id="setup" class="tab-content active">
+            <h2>Step 1: Upload CSV File</h2>
+            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" accept=".csv" onchange="uploadFile(event)">
+                <div class="file-upload-label">
+                    📁 Click to upload Shopify CSV file<br>
+                    <small style="color: #999;">or drag and drop here</small>
+                </div>
+            </div>
+            <div id="fileInfo" class="info-box" style="display: none;">
+                <h3>✓ File Loaded</h3>
+                <p id="fileDetails"></p>
+            </div>
+
+            <h2 style="margin-top: 40px;">Step 2: API Key</h2>
+            <div class="form-group">
+                <label for="apiKey">OpenAI API Key</label>
+                <input type="password" id="apiKey" placeholder="sk-...">
+                <small style="color: #999;">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI</a></small>
+            </div>
+
+            <h2 style="margin-top: 40px;">Step 3: Target Language</h2>
+            <div class="form-group">
+                <label for="language">Select Language</label>
+                <select id="language">
+                    <option value="">Loading languages...</option>
+                </select>
+            </div>
+
+            <h2 style="margin-top: 40px;">Step 4: Translation Mode</h2>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="mode" value="direct">
+                    <span><strong>Direct Translation</strong> - Literal, word-for-word</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="mode" value="market_adaptation" checked>
+                    <span><strong>Market Adaptation</strong> - Localized, SEO-optimized (Recommended)</span>
+                </label>
+            </div>
+
+            <h2 style="margin-top: 40px;">Step 5: AI Model</h2>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="model" value="gpt-4o-mini" checked>
+                    <span><strong>GPT-4o-mini</strong> - Fast & economical (~$0.001/product)</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="model" value="gpt-4o">
+                    <span><strong>GPT-4o</strong> - Premium quality (~$0.013/product)</span>
+                </label>
+            </div>
+
+            <div class="form-group" style="margin-top: 40px;">
+                <label for="instructions">Special Instructions (Optional)</label>
+                <textarea id="instructions" rows="3" placeholder="e.g., Winter clothing for men aged 25-50"></textarea>
+            </div>
+        </div>
+
+        <!-- Fields Tab -->
+        <div id="fields" class="tab-content">
+            <h2>Select Fields to Translate</h2>
+            <div class="button-group" style="margin: 20px 0;">
+                <button class="btn btn-secondary" onclick="selectAllFields()">Select All</button>
+                <button class="btn btn-secondary" onclick="selectRecommended()">Recommended</button>
+                <button class="btn btn-secondary" onclick="clearAllFields()">Clear All</button>
+            </div>
+
+            <div id="fieldsList" class="checkbox-group">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Options Tab -->
+        <div id="options" class="tab-content">
+            <h2>👟 Shoe Size Conversion</h2>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="shoe" value="none" checked>
+                    <span><strong>No conversion</strong></span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="shoe" value="us_to_eu">
+                    <span><strong>US → EU</strong> (e.g., US 8 → EU 41)</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="shoe" value="eu_to_us">
+                    <span><strong>EU → US</strong> (e.g., EU 41 → US 8)</span>
+                </label>
+            </div>
+
+            <div class="info-box" style="margin-top: 30px;">
+                <h3>ℹ️ Auto-detection</h3>
+                <p><strong>Women's shoes:</strong> Detected by EU 35-42 or keywords (women, ladies, female, γυναικεία)</p>
+                <p><strong>Men's shoes:</strong> Detected by EU 39+ or keywords (men, male, ανδρικά)</p>
+                <p style="margin-top: 10px;"><strong>Conversion tables:</strong></p>
+                <p>Women's: US 5=EU 35, US 7=EU 37, US 9=EU 39</p>
+                <p>Men's: US 7=EU 40, US 9=EU 42, US 11=EU 44</p>
+            </div>
+
+            <h2 style="margin-top: 40px;">📝 Description Format</h2>
+            <div class="info-box">
+                <h3>✓ Automatic 4 Bullet Points</h3>
+                <p>Product descriptions (Body HTML) are automatically formatted with:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>1 short introductory paragraph (2-3 sentences max)</li>
+                    <li>EXACTLY 4 bullet points highlighting key features</li>
+                </ul>
+                <p style="margin-top: 10px;"><em>This format is proven to increase conversions!</em></p>
+            </div>
+        </div>
+
+        <!-- Translate Tab -->
+        <div id="translate" class="tab-content">
+            <h2>Ready to Translate</h2>
+
+            <div id="summary" class="info-box">
+                <h3>Translation Summary</h3>
+                <p id="summaryText">Please complete the setup first.</p>
+            </div>
+
+            <div id="costEstimate" class="info-box" style="display: none;">
+                <h3>💰 Cost Estimate</h3>
+                <p id="costText"></p>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="startTranslation()">🚀 Start Translation</button>
+            </div>
+
+            <div id="progressContainer" class="progress-container">
+                <div class="status-message" id="statusMessage">Preparing...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <p style="text-align: center; color: #999;" id="progressDetails"></p>
+            </div>
+
+            <div id="resultBox" class="result-box">
+                <h3>✓ Translation Completed!</h3>
+                <p id="resultText"></p>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="downloadResult()">📥 Download Translated File</button>
+                </div>
+            </div>
+
+            <div id="errorBox" class="error-box">
+                <h3>✗ Error</h3>
+                <p id="errorText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+        let fileAnalysis = null;
+        let sessionId = null;
+
+        // Load languages on page load
+        window.onload = function() {
+            loadLanguages();
+            loadFields();
+        };
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Update summary when showing translate tab
+            if (tabName === 'translate') {
+                updateSummary();
+            }
+        }
+
+        async function loadLanguages() {
+            try {
+                const response = await fetch('/api/languages');
+                const data = await response.json();
+                const select = document.getElementById('language');
+                select.innerHTML = '';
+
+                data.languages.forEach(lang => {
+                    const option = document.createElement('option');
+                    option.value = lang.key;
+                    option.textContent = lang.name;
+                    select.appendChild(option);
+                });
+
+                // Select Greek by default
+                select.value = 'greek';
+            } catch (error) {
+                console.error('Error loading languages:', error);
+            }
+        }
+
+        async function loadFields() {
+            try {
+                const response = await fetch('/api/fields');
+                const data = await response.json();
+                const container = document.getElementById('fieldsList');
+                container.innerHTML = '';
+
+                const recommended = ['Title', 'Body (HTML)', 'Type', 'Option1 Name', 'Option1 Value', 'Option2 Name', 'Option2 Value'];
+
+                data.fields.forEach(field => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    div.innerHTML = `
+                        <input type="checkbox" id="field_${field}" value="${field}" ${recommended.includes(field) ? 'checked' : ''}>
+                        <label for="field_${field}">${field}</label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error loading fields:', error);
+            }
+        }
+
+        function selectAllFields() {
+            document.querySelectorAll('#fieldsList input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+            });
+        }
+
+        function selectRecommended() {
+            const recommended = ['Title', 'Body (HTML)', 'Type', 'Option1 Name', 'Option1 Value', 'Option2 Name', 'Option2 Value'];
+            document.querySelectorAll('#fieldsList input[type="checkbox"]').forEach(cb => {
+                cb.checked = recommended.includes(cb.value);
+            });
+        }
+
+        function clearAllFields() {
+            document.querySelectorAll('#fieldsList input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        async function uploadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedFile = file;
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                    return;
+                }
+
+                fileAnalysis = await response.json();
+
+                // Show file info
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileDetails').innerHTML = `
+                    <strong>File:</strong> ${fileAnalysis.filename}<br>
+                    <strong>Total Rows:</strong> ${fileAnalysis.total_rows}<br>
+                    <strong>Products:</strong> ${fileAnalysis.unique_products}<br>
+                    <strong>Available Fields:</strong> ${fileAnalysis.available_fields.join(', ')}
+                `;
+
+                // Update field checkboxes to only show available fields
+                document.querySelectorAll('#fieldsList .checkbox-item').forEach(item => {
+                    const checkbox = item.querySelector('input');
+                    if (!fileAnalysis.available_fields.includes(checkbox.value)) {
+                        item.style.opacity = '0.5';
+                        checkbox.disabled = true;
+                        checkbox.checked = false;
+                    }
+                });
+
+                alert('✓ File uploaded successfully!');
+            } catch (error) {
+                alert('Error uploading file: ' + error.message);
+            }
+        }
+
+        function updateSummary() {
+            if (!fileAnalysis) {
+                document.getElementById('summaryText').textContent = 'Please upload a CSV file first.';
+                document.getElementById('costEstimate').style.display = 'none';
+                return;
+            }
+
+            const language = document.getElementById('language').selectedOptions[0].textContent;
+            const mode = document.querySelector('input[name="mode"]:checked').nextElementSibling.querySelector('strong').textContent;
+            const model = document.querySelector('input[name="model"]:checked').nextElementSibling.querySelector('strong').textContent;
+            const selectedFields = Array.from(document.querySelectorAll('#fieldsList input:checked')).map(cb => cb.value);
+
+            document.getElementById('summaryText').innerHTML = `
+                <strong>File:</strong> ${fileAnalysis.filename}<br>
+                <strong>Products:</strong> ${fileAnalysis.unique_products}<br>
+                <strong>Language:</strong> ${language}<br>
+                <strong>Mode:</strong> ${mode}<br>
+                <strong>Model:</strong> ${model}<br>
+                <strong>Fields:</strong> ${selectedFields.length} selected
+            `;
+
+            // Get cost estimate
+            estimateCost();
+        }
+
+        async function estimateCost() {
+            if (!fileAnalysis) return;
+
+            const selectedFields = Array.from(document.querySelectorAll('#fieldsList input:checked')).map(cb => cb.value);
+            const model = document.querySelector('input[name="model"]:checked').value;
+
+            try {
+                const response = await fetch('/api/estimate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        products: fileAnalysis.unique_products,
+                        fields: selectedFields,
+                        model: model
+                    })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('costEstimate').style.display = 'block';
+                document.getElementById('costText').innerHTML = `
+                    <strong>Products:</strong> ${data.products}<br>
+                    <strong>Fields:</strong> ${data.fields}<br>
+                    <strong>Estimated Tokens:</strong> ~${data.estimated_tokens.toLocaleString()}<br>
+                    <strong>Estimated Cost:</strong> $${data.cost_min} - $${data.cost_max} USD
+                `;
+            } catch (error) {
+                console.error('Error estimating cost:', error);
+            }
+        }
+
+        async function startTranslation() {
+            // Validate inputs
+            if (!fileAnalysis) {
+                alert('Please upload a CSV file first!');
+                return;
+            }
+
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter your OpenAI API key!');
+                return;
+            }
+
+            const selectedFields = Array.from(document.querySelectorAll('#fieldsList input:checked')).map(cb => cb.value);
+            if (selectedFields.length === 0) {
+                alert('Please select at least one field to translate!');
+                return;
+            }
+
+            if (!confirm('Start translation? This will use your OpenAI API credits.')) {
+                return;
+            }
+
+            // Hide result/error boxes
+            document.getElementById('resultBox').classList.remove('active');
+            document.getElementById('errorBox').classList.remove('active');
+
+            // Show progress
+            document.getElementById('progressContainer').classList.add('active');
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressFill').textContent = '0%';
+            document.getElementById('statusMessage').textContent = 'Starting translation...';
+
+            // Prepare data
+            const data = {
+                filepath: fileAnalysis.filepath,
+                api_key: apiKey,
+                target_language: document.getElementById('language').value,
+                translation_mode: document.querySelector('input[name="mode"]:checked').value,
+                model: document.querySelector('input[name="model"]:checked').value,
+                fields: selectedFields,
+                special_instructions: document.getElementById('instructions').value,
+                shoe_conversion: document.querySelector('input[name="shoe"]:checked').value
+            };
+
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+
+                const result = await response.json();
+                sessionId = result.session_id;
+
+                // Start polling for progress
+                pollProgress();
+            } catch (error) {
+                document.getElementById('progressContainer').classList.remove('active');
+                document.getElementById('errorBox').classList.add('active');
+                document.getElementById('errorText').textContent = error.message;
+            }
+        }
+
+        async function pollProgress() {
+            if (!sessionId) return;
+
+            try {
+                const response = await fetch(`/api/progress/${sessionId}`);
+                const data = await response.json();
+
+                document.getElementById('statusMessage').textContent = data.message;
+                document.getElementById('progressFill').style.width = data.progress + '%';
+                document.getElementById('progressFill').textContent = data.progress + '%';
+
+                if (data.total) {
+                    document.getElementById('progressDetails').textContent = `Processing...`;
+                }
+
+                if (data.status === 'completed') {
+                    document.getElementById('progressContainer').classList.remove('active');
+                    document.getElementById('resultBox').classList.add('active');
+                    document.getElementById('resultText').innerHTML = `
+                        <strong>Output File:</strong> ${data.output_file}<br>
+                        <strong>Total Tokens:</strong> ${data.total_tokens.toLocaleString()}<br>
+                        <strong>Total Cost:</strong> $${data.total_cost} USD<br><br>
+                        <em>Ready to import to Shopify!</em>
+                    `;
+                    window.outputFile = data.output_file;
+                } else if (data.status === 'error') {
+                    document.getElementById('progressContainer').classList.remove('active');
+                    document.getElementById('errorBox').classList.add('active');
+                    document.getElementById('errorText').textContent = data.message;
+                } else {
+                    // Continue polling
+                    setTimeout(pollProgress, 1000);
+                }
+            } catch (error) {
+                console.error('Error polling progress:', error);
+                setTimeout(pollProgress, 2000);
+            }
+        }
+
+        function downloadResult() {
+            if (window.outputFile) {
+                window.location.href = `/api/download/${window.outputFile}`;
+            }
+        }
+    </script>
+</body>
+</html>
