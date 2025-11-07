@@ -281,6 +281,43 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
         # Final cache save
         translator.save_cache()
 
+        # Apply shoe size conversion if requested
+        if shoe_conversion != 'none':
+            translation_sessions[session_id]['message'] = 'Converting shoe sizes...'
+            from shoe_size_converter import ShoeSizeConverter
+
+            # Fields that might contain shoe sizes
+            size_fields = ['Option1 Value', 'Option2 Value', 'Option3 Value', 'Variant Size', 'Title']
+
+            for idx, row in translator.df.iterrows():
+                # Get context for gender detection (title, type, etc.)
+                context = ""
+                if 'Title' in translator.df.columns:
+                    context += str(row.get('Title', '')) + " "
+                if 'Type' in translator.df.columns:
+                    context += str(row.get('Type', '')) + " "
+                if 'Body (HTML)' in translator.df.columns:
+                    context += str(row.get('Body (HTML)', ''))[:200]  # First 200 chars
+
+                # Convert sizes in each field
+                for field in size_fields:
+                    if field in translator.df.columns:
+                        value = row.get(field)
+                        if pd.notna(value) and value != "":
+                            # Convert based on direction
+                            if shoe_conversion == 'us_to_eu':
+                                converted = ShoeSizeConverter.convert_size_in_text(
+                                    str(value), 'us_to_eu', context
+                                )
+                            elif shoe_conversion == 'eu_to_us':
+                                converted = ShoeSizeConverter.convert_size_in_text(
+                                    str(value), 'eu_to_us', context
+                                )
+                            else:
+                                converted = value
+
+                            translator.df.at[idx, field] = converted
+
         # Save output
         translation_sessions[session_id]['message'] = 'Saving output...'
         output_filename = f"{os.path.basename(filepath).replace('.csv', '')}_{target_language}_{datetime.now().strftime('%Y%m%d')}.csv"

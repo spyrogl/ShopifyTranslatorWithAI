@@ -510,11 +510,27 @@ class ShopifyTranslator:
 
         special_instructions = input(f"\n{Fore.YELLOW}Enter special instructions (or press Enter to skip): {Style.RESET_ALL}").strip()
 
+        # Shoe size conversion
+        print(f"\n{Fore.CYAN}Shoe size conversion (optional):{Style.RESET_ALL}")
+        print("  1. None - Keep sizes as they are")
+        print("  2. US → EU - Convert US sizes to European sizes")
+        print("  3. EU → US - Convert European sizes to US sizes")
+
+        shoe_input = input(f"\n{Fore.YELLOW}Select conversion (1-3, or press Enter for None): {Style.RESET_ALL}").strip()
+
+        if shoe_input == '2':
+            shoe_conversion = 'us_to_eu'
+        elif shoe_input == '3':
+            shoe_conversion = 'eu_to_us'
+        else:
+            shoe_conversion = 'none'
+
         settings = {
             'target_language': target_language,
             'translation_mode': translation_mode,
             'model': model,
-            'special_instructions': special_instructions
+            'special_instructions': special_instructions,
+            'shoe_conversion': shoe_conversion
         }
 
         # Save as defaults
@@ -791,6 +807,45 @@ IMPORTANT:
 
         # Save final cache
         self.save_cache()
+
+        # Apply shoe size conversion if requested
+        if settings.get('shoe_conversion', 'none') != 'none':
+            print(f"\n{Fore.CYAN}Converting shoe sizes...{Style.RESET_ALL}")
+            from shoe_size_converter import ShoeSizeConverter
+
+            # Fields that might contain shoe sizes
+            size_fields = ['Option1 Value', 'Option2 Value', 'Option3 Value', 'Variant Size', 'Title']
+
+            for idx, row in self.df.iterrows():
+                # Get context for gender detection (title, type, etc.)
+                context = ""
+                if 'Title' in self.df.columns:
+                    context += str(row.get('Title', '')) + " "
+                if 'Type' in self.df.columns:
+                    context += str(row.get('Type', '')) + " "
+                if 'Body (HTML)' in self.df.columns:
+                    context += str(row.get('Body (HTML)', ''))[:200]  # First 200 chars
+
+                # Convert sizes in each field
+                for field in size_fields:
+                    if field in self.df.columns:
+                        value = row.get(field)
+                        if pd.notna(value) and value != "":
+                            # Convert based on direction
+                            if settings['shoe_conversion'] == 'us_to_eu':
+                                converted = ShoeSizeConverter.convert_size_in_text(
+                                    str(value), 'us_to_eu', context
+                                )
+                            elif settings['shoe_conversion'] == 'eu_to_us':
+                                converted = ShoeSizeConverter.convert_size_in_text(
+                                    str(value), 'eu_to_us', context
+                                )
+                            else:
+                                converted = value
+
+                            self.df.at[idx, field] = converted
+
+            self.print_success("Shoe size conversion completed")
 
         elapsed_time = time.time() - start_time
 
