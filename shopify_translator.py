@@ -17,6 +17,9 @@ from openai import OpenAI
 from colorama import init, Fore, Back, Style
 from tqdm import tqdm
 
+# Import language definitions
+from languages import ALL_LANGUAGES, get_translation_prompt, STANDARD_OPTION_NAMES_EXTENDED
+
 # Initialize colorama for cross-platform colored output
 init(autoreset=True)
 
@@ -29,149 +32,7 @@ OUTPUT_DIR = "translated_outputs"
 # Standard sizes that should not be translated
 STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', '4XL', '5XL']
 
-# Standard Option Names - Consistent translations across all products for professional branding
-STANDARD_OPTION_NAMES = {
-    'greek': {
-        'color': 'Χρώμα',
-        'colour': 'Χρώμα',
-        'size': 'Μέγεθος',
-        'material': 'Υλικό',
-        'style': 'Στυλ',
-        'pattern': 'Μοτίβο',
-        'finish': 'Φινίρισμα',
-        'type': 'Τύπος',
-        'length': 'Μήκος',
-        'width': 'Πλάτος',
-        'weight': 'Βάρος',
-        'volume': 'Όγκος',
-        'capacity': 'Χωρητικότητα',
-        'fit': 'Εφαρμογή',
-        'cut': 'Κόψιμο',
-        'sleeve': 'Μανίκι',
-        'neck': 'Λαιμός',
-        'waist': 'Μέση',
-    },
-    'dutch': {
-        'color': 'Kleur',
-        'colour': 'Kleur',
-        'size': 'Maat',
-        'material': 'Materiaal',
-        'style': 'Stijl',
-        'pattern': 'Patroon',
-        'finish': 'Afwerking',
-        'type': 'Type',
-        'length': 'Lengte',
-        'width': 'Breedte',
-        'weight': 'Gewicht',
-        'volume': 'Volume',
-        'capacity': 'Capaciteit',
-        'fit': 'Pasvorm',
-        'cut': 'Snit',
-        'sleeve': 'Mouw',
-        'neck': 'Hals',
-        'waist': 'Taille',
-    },
-    'german': {
-        'color': 'Farbe',
-        'colour': 'Farbe',
-        'size': 'Größe',
-        'material': 'Material',
-        'style': 'Stil',
-        'pattern': 'Muster',
-        'finish': 'Oberfläche',
-        'type': 'Typ',
-        'length': 'Länge',
-        'width': 'Breite',
-        'weight': 'Gewicht',
-        'volume': 'Volumen',
-        'capacity': 'Kapazität',
-        'fit': 'Passform',
-        'cut': 'Schnitt',
-        'sleeve': 'Ärmel',
-        'neck': 'Hals',
-        'waist': 'Taille',
-    },
-    'french': {
-        'color': 'Couleur',
-        'colour': 'Couleur',
-        'size': 'Taille',
-        'material': 'Matériau',
-        'style': 'Style',
-        'pattern': 'Motif',
-        'finish': 'Finition',
-        'type': 'Type',
-        'length': 'Longueur',
-        'width': 'Largeur',
-        'weight': 'Poids',
-        'volume': 'Volume',
-        'capacity': 'Capacité',
-        'fit': 'Coupe',
-        'cut': 'Coupe',
-        'sleeve': 'Manche',
-        'neck': 'Col',
-        'waist': 'Taille',
-    },
-    'spanish': {
-        'color': 'Color',
-        'colour': 'Color',
-        'size': 'Talla',
-        'material': 'Material',
-        'style': 'Estilo',
-        'pattern': 'Patrón',
-        'finish': 'Acabado',
-        'type': 'Tipo',
-        'length': 'Longitud',
-        'width': 'Ancho',
-        'weight': 'Peso',
-        'volume': 'Volumen',
-        'capacity': 'Capacidad',
-        'fit': 'Ajuste',
-        'cut': 'Corte',
-        'sleeve': 'Manga',
-        'neck': 'Cuello',
-        'waist': 'Cintura',
-    },
-    'italian': {
-        'color': 'Colore',
-        'colour': 'Colore',
-        'size': 'Taglia',
-        'material': 'Materiale',
-        'style': 'Stile',
-        'pattern': 'Motivo',
-        'finish': 'Finitura',
-        'type': 'Tipo',
-        'length': 'Lunghezza',
-        'width': 'Larghezza',
-        'weight': 'Peso',
-        'volume': 'Volume',
-        'capacity': 'Capacità',
-        'fit': 'Vestibilità',
-        'cut': 'Taglio',
-        'sleeve': 'Manica',
-        'neck': 'Collo',
-        'waist': 'Vita',
-    },
-    'chilean': {
-        'color': 'Color',
-        'colour': 'Color',
-        'size': 'Talla',
-        'material': 'Material',
-        'style': 'Estilo',
-        'pattern': 'Patrón',
-        'finish': 'Acabado',
-        'type': 'Tipo',
-        'length': 'Largo',
-        'width': 'Ancho',
-        'weight': 'Peso',
-        'volume': 'Volumen',
-        'capacity': 'Capacidad',
-        'fit': 'Calce',
-        'cut': 'Corte',
-        'sleeve': 'Manga',
-        'neck': 'Cuello',
-        'waist': 'Cintura',
-    }
-}
+
 
 # Fields that can be translated
 TRANSLATABLE_FIELDS = [
@@ -190,68 +51,11 @@ TRANSLATABLE_FIELDS = [
     'SEO Description'
 ]
 
-# Language-specific market adaptation prompts
-MARKET_ADAPTATIONS = {
-    'greek': {
-        'name': 'Ελληνικά (Greek)',
-        'code': 'el',
-        'prompt': """Target audience: Greek men aged 25-50 interested in quality fashion.
-Use warm, persuasive e-commerce language common in Greek online stores.
-Optimize for Greek SEO with natural keyword placement.
-Emphasize quality, style, and value.
-Use 'εσείς' form (formal you) for respect."""
-    },
-    'dutch': {
-        'name': 'Nederlands (Dutch)',
-        'code': 'nl',
-        'prompt': """Target audience: Dutch consumers who value practicality and honesty.
-Use straightforward, no-nonsense language.
-Emphasize functionality and quality.
-Keep descriptions concise and factual.
-Use 'je/jij' form (informal you) for friendliness."""
-    },
-    'german': {
-        'name': 'Deutsch (German)',
-        'code': 'de',
-        'prompt': """Target audience: German consumers who value quality and precision.
-Use clear, professional language with attention to detail.
-Emphasize engineering, quality materials, and durability.
-Use 'Sie' form (formal you) for professionalism."""
-    },
-    'french': {
-        'name': 'Français (French)',
-        'code': 'fr',
-        'prompt': """Target audience: French consumers who appreciate style and elegance.
-Use sophisticated, refined language.
-Emphasize design, aesthetics, and lifestyle.
-Use 'vous' form (formal you) for elegance."""
-    },
-    'spanish': {
-        'name': 'Español (Spanish)',
-        'code': 'es',
-        'prompt': """Target audience: Spanish-speaking consumers who value family and tradition.
-Use warm, friendly language with emotional connection.
-Emphasize value, versatility, and practical benefits.
-Use 'usted' form (formal you) for respect."""
-    },
-    'italian': {
-        'name': 'Italiano (Italian)',
-        'code': 'it',
-        'prompt': """Target audience: Italian consumers who appreciate style and craftsmanship.
-Use passionate, expressive language.
-Emphasize fashion, quality, and Italian design sensibility.
-Use 'Lei' form (formal you) for elegance."""
-    },
-    'chilean': {
-        'name': 'Español Chileno (Chilean Spanish)',
-        'code': 'es-CL',
-        'prompt': """Target audience: Chilean consumers who value authenticity and quality.
-Use warm, friendly Chilean Spanish with local expressions when appropriate.
-Emphasize value, durability, and style that fits Chilean lifestyle.
-Use 'usted' form (formal you) for respect, but keep tone approachable.
-Incorporate Chilean Spanish nuances and vocabulary where natural."""
-    }
-}
+# Use comprehensive language list from languages module
+MARKET_ADAPTATIONS = ALL_LANGUAGES
+
+# Update STANDARD_OPTION_NAMES to use extended version
+STANDARD_OPTION_NAMES = STANDARD_OPTION_NAMES_EXTENDED
 
 
 class ShopifyTranslator:
@@ -665,13 +469,17 @@ class ShopifyTranslator:
         # Build prompt
         lang_info = MARKET_ADAPTATIONS[settings['target_language']]
 
+        # Get generic translation prompt without location references
+        base_prompt = get_translation_prompt(
+            lang_info['name'],
+            lang_info['code'],
+            settings['translation_mode']
+        )
+
         if settings['translation_mode'] == 'market_adaptation':
             # Special formatting for product descriptions (Body HTML)
             if field_name == 'Body (HTML)':
-                system_prompt = f"""You are a professional e-commerce translator specializing in product descriptions.
-Translate the following text to {lang_info['name']}.
-
-{lang_info['prompt']}
+                system_prompt = f"""{base_prompt}
 
 {"Special context: " + settings['special_instructions'] if settings['special_instructions'] else ""}
 
@@ -690,29 +498,29 @@ CRITICAL FORMATTING REQUIREMENTS:
   </ul>
 
 IMPORTANT:
+- DO NOT mention any specific countries, cities, regions, or locations
+- Focus only on product features and benefits
 - Preserve ALL HTML tags exactly
 - MUST have exactly 4 bullet points
 - Keep description concise and compelling
 - Return ONLY the translated HTML, no explanations"""
             else:
-                system_prompt = f"""You are a professional e-commerce translator specializing in product descriptions.
-Translate the following text to {lang_info['name']}.
-
-{lang_info['prompt']}
+                system_prompt = f"""{base_prompt}
 
 {"Special context: " + settings['special_instructions'] if settings['special_instructions'] else ""}
 
 IMPORTANT:
+- DO NOT mention any specific countries, cities, regions, or locations
+- Focus only on product features and benefits
 - If the text contains HTML tags, preserve ALL HTML tags exactly as they are
 - Keep the same structure and formatting
 - Only translate the actual text content, not HTML tags or attributes
 - Return ONLY the translated text, no explanations"""
         else:
-            system_prompt = f"""You are a professional translator.
-Translate the following text to {lang_info['name']}.
-Provide a literal, accurate translation.
+            system_prompt = f"""{base_prompt}
 
 IMPORTANT:
+- DO NOT mention any specific countries, cities, regions, or locations
 - If the text contains HTML tags, preserve ALL HTML tags exactly as they are
 - Return ONLY the translated text, no explanations"""
 

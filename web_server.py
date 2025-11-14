@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 
 # Import the translator
 from shopify_translator import ShopifyTranslator, MARKET_ADAPTATIONS, TRANSLATABLE_FIELDS
+from languages import ALL_LANGUAGES
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -37,14 +38,17 @@ def index():
 
 @app.route('/api/languages', methods=['GET'])
 def get_languages():
-    """Get available languages"""
+    """Get available languages - all 100+ languages sorted alphabetically"""
     languages = []
-    for key, lang in MARKET_ADAPTATIONS.items():
+    for key, lang in ALL_LANGUAGES.items():
         languages.append({
             'key': key,
             'name': lang['name'],
-            'code': lang['code']
+            'code': lang['code'],
+            'native': lang.get('native', lang['name'])
         })
+    # Sort alphabetically by name
+    languages.sort(key=lambda x: x['name'])
     return jsonify({'languages': languages})
 
 
