@@ -621,8 +621,8 @@ IMPORTANT:
             print(f"\n{Fore.CYAN}Converting shoe sizes...{Style.RESET_ALL}")
             from shoe_size_converter import ShoeSizeConverter
 
-            # Fields that might contain shoe sizes
-            size_fields = ['Option1 Value', 'Option2 Value', 'Option3 Value', 'Variant Size', 'Title']
+            # Size keywords in various languages
+            size_keywords = ['size', 'μέγεθος', 'talla', 'maat', 'größe', 'taille', 'taglia', 'tamanho']
 
             for idx, row in self.df.iterrows():
                 # Get context for gender detection (title, type, etc.)
@@ -634,24 +634,34 @@ IMPORTANT:
                 if 'Body (HTML)' in self.df.columns:
                     context += str(row.get('Body (HTML)', ''))[:200]  # First 200 chars
 
-                # Convert sizes in each field
-                for field in size_fields:
-                    if field in self.df.columns:
-                        value = row.get(field)
+                # Check each Option field
+                for i in [1, 2, 3]:
+                    name_field = f'Option{i} Name'
+                    value_field = f'Option{i} Value'
+
+                    # Check if this option is for shoe sizes
+                    is_size_field = False
+                    if name_field in self.df.columns:
+                        option_name = str(row.get(name_field, '')).lower()
+                        is_size_field = any(keyword in option_name for keyword in size_keywords)
+
+                    # Convert the value if it's a size field
+                    if is_size_field and value_field in self.df.columns:
+                        value = row.get(value_field)
                         if pd.notna(value) and value != "":
                             # Convert based on direction
                             if settings['shoe_conversion'] == 'us_to_eu':
                                 converted = ShoeSizeConverter.convert_size_in_text(
-                                    str(value), 'us_to_eu', context
+                                    str(value), 'us_to_eu', context, is_size_field=True
                                 )
                             elif settings['shoe_conversion'] == 'eu_to_us':
                                 converted = ShoeSizeConverter.convert_size_in_text(
-                                    str(value), 'eu_to_us', context
+                                    str(value), 'eu_to_us', context, is_size_field=True
                                 )
                             else:
                                 converted = value
 
-                            self.df.at[idx, field] = converted
+                            self.df.at[idx, value_field] = converted
 
             self.print_success("Shoe size conversion completed")
 

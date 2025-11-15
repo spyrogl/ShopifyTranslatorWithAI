@@ -236,7 +236,7 @@ class ShoeSizeConverter:
             return round(eu_size - 33, 1)
 
     @classmethod
-    def convert_size_in_text(cls, text: str, conversion_type: str, context: str = "") -> str:
+    def convert_size_in_text(cls, text: str, conversion_type: str, context: str = "", is_size_field: bool = False) -> str:
         """
         Find and convert shoe sizes in text.
 
@@ -244,6 +244,7 @@ class ShoeSizeConverter:
             text: Text containing shoe size
             conversion_type: 'us_to_eu' or 'eu_to_us'
             context: Additional context for gender detection
+            is_size_field: If True, treats plain numbers as shoe sizes
 
         Returns:
             Text with converted shoe size
@@ -251,10 +252,39 @@ class ShoeSizeConverter:
         if not text or pd.isna(text):
             return text
 
+        text_str = str(text).strip()
+
         # Detect gender from context
         gender = cls.detect_gender(context)
 
-        # Patterns to find and replace
+        # If this is a size field and contains only a number, convert it directly
+        if is_size_field:
+            # Check if text is just a number (possibly with .5)
+            number_pattern = r'^\s*(\d+(?:\.\d+)?)\s*$'
+            match = re.match(number_pattern, text_str)
+
+            if match:
+                size_num = float(match.group(1))
+
+                if conversion_type == 'us_to_eu':
+                    # Convert US to EU
+                    if 4 <= size_num <= 15:  # Valid US size range
+                        eu_size = cls.us_to_eu(size_num, gender, context)
+                        if eu_size:
+                            # Return just the number or with EU marker
+                            return str(int(eu_size) if eu_size == int(eu_size) else eu_size)
+                    return text_str  # Not in valid range, keep as is
+
+                elif conversion_type == 'eu_to_us':
+                    # Convert EU to US
+                    if 34 <= size_num <= 48:  # Valid EU size range
+                        us_size = cls.eu_to_us(size_num, gender, context)
+                        if us_size:
+                            # Return just the number or with US marker
+                            return str(int(us_size) if us_size == int(us_size) else us_size)
+                    return text_str  # Not in valid range, keep as is
+
+        # Patterns to find and replace (for text with US/EU markers)
         if conversion_type == 'us_to_eu':
             # Find US sizes and convert to EU
             pattern = r'\b(\d+(?:\.\d+)?)\s*(?:US|us)\b'
@@ -263,7 +293,7 @@ class ShoeSizeConverter:
                 us_size = float(match.group(1))
                 eu_size = cls.us_to_eu(us_size, gender, context)
                 if eu_size:
-                    return f"{eu_size} EU"
+                    return f"{int(eu_size) if eu_size == int(eu_size) else eu_size} EU"
                 return match.group(0)
 
         elif conversion_type == 'eu_to_us':
@@ -274,13 +304,13 @@ class ShoeSizeConverter:
                 eu_size = float(match.group(1))
                 us_size = cls.eu_to_us(eu_size, gender, context)
                 if us_size:
-                    return f"{us_size} US"
+                    return f"{int(us_size) if us_size == int(us_size) else us_size} US"
                 return match.group(0)
 
         else:
-            return text
+            return text_str
 
-        return re.sub(pattern, replace_func, text)
+        return re.sub(pattern, replace_func, text_str)
 
 
 # Import pandas only if needed
