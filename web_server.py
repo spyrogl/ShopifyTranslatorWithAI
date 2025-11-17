@@ -345,8 +345,9 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         translator.df.to_csv(output_path, index=False, encoding='utf-8')
 
-        # Get preview data (first 5 rows)
-        preview_data = translator.df.head(10).to_dict('records')
+        # Get preview data (first 10 rows) and replace NaN with empty strings for JSON compatibility
+        preview_df = translator.df.head(10).fillna('')
+        preview_data = preview_df.to_dict('records')
 
         # Calculate cost
         if model == 'gpt-4o-mini':
