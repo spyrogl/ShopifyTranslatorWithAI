@@ -18,7 +18,7 @@ from colorama import init, Fore, Back, Style
 from tqdm import tqdm
 
 # Import language definitions
-from languages import ALL_LANGUAGES, get_translation_prompt, STANDARD_OPTION_NAMES_EXTENDED
+from languages import ALL_LANGUAGES, get_translation_prompt, get_unified_system_prompt, build_config_section, STANDARD_OPTION_NAMES_EXTENDED
 
 # Initialize colorama for cross-platform colored output
 init(autoreset=True)
@@ -589,70 +589,35 @@ class ShopifyTranslator:
             if self.is_clothing_size(text):
                 return text
 
-        # Build prompt
+        # Build prompt with CONFIG section
         lang_info = MARKET_ADAPTATIONS[settings['target_language']]
 
-        # Get generic translation prompt without location references
-        base_prompt = get_translation_prompt(
-            lang_info['name'],
-            lang_info['code'],
-            settings['translation_mode']
+        # Use the unified system prompt
+        system_prompt = get_unified_system_prompt()
+
+        # Build CONFIG section for user message
+        config_section = build_config_section(
+            target_language=lang_info['code'],
+            convert_shoe_sizes="NONE",  # Shoe conversion is done separately after translation
+            default_shoe_gender="women"
         )
 
-        if settings['translation_mode'] == 'market_adaptation':
-            # Special formatting for product descriptions (Body HTML)
-            if field_name == 'Body (HTML)':
-                system_prompt = f"""{base_prompt}
+        # Add special instructions if provided
+        if settings.get('special_instructions'):
+            config_section += f"\nspecial_instructions: {settings['special_instructions']}"
 
-{"Special context: " + settings['special_instructions'] if settings['special_instructions'] else ""}
+        # Build user message with CONFIG + TEXT format
+        user_message = f"""{config_section}
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Structure the translation with:
-  1. One short introductory paragraph (2-3 sentences maximum)
-  2. Followed by EXACTLY 4 bullet points (no more, no less)
-- Use HTML tags: <p> for paragraph, <ul> and <li> for bullet points
-- Format example:
-  <p>Short description here.</p>
-  <ul>
-  <li>First key feature</li>
-  <li>Second key feature</li>
-  <li>Third key feature</li>
-  <li>Fourth key feature</li>
-  </ul>
-
-IMPORTANT:
-- DO NOT mention any specific countries, cities, regions, or locations
-- Focus only on product features and benefits
-- Preserve ALL HTML tags exactly
-- MUST have exactly 4 bullet points
-- Keep description concise and compelling
-- Return ONLY the translated HTML, no explanations"""
-            else:
-                system_prompt = f"""{base_prompt}
-
-{"Special context: " + settings['special_instructions'] if settings['special_instructions'] else ""}
-
-IMPORTANT:
-- DO NOT mention any specific countries, cities, regions, or locations
-- Focus only on product features and benefits
-- If the text contains HTML tags, preserve ALL HTML tags exactly as they are
-- Keep the same structure and formatting
-- Only translate the actual text content, not HTML tags or attributes
-- Return ONLY the translated text, no explanations"""
-        else:
-            system_prompt = f"""{base_prompt}
-
-IMPORTANT:
-- DO NOT mention any specific countries, cities, regions, or locations
-- If the text contains HTML tags, preserve ALL HTML tags exactly as they are
-- Return ONLY the translated text, no explanations"""
+TEXT TO TRANSLATE
+{text}"""
 
         try:
             response = self.client.chat.completions.create(
                 model=settings['model'],
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": text}
+                    {"role": "user", "content": user_message}
                 ],
                 temperature=0.3 if settings['translation_mode'] == 'direct' else 0.7
             )

@@ -108,10 +108,291 @@ ALL_LANGUAGES = {
     'latin': {'name': 'Latina (Latin)', 'code': 'la', 'native': 'Latina'},
 }
 
-# FINAL SYSTEM PROMPT – SHOPIFY CSV TRANSLATOR
+# ΤΕΛΙΚΟ – ΕΝΙΑΙΟ SYSTEM PROMPT
+def get_unified_system_prompt() -> str:
+    """
+    Returns the FINAL UNIFIED SYSTEM PROMPT exactly as specified.
+    This prompt expects CONFIG + CSV in the user message.
+
+    Returns:
+        Complete system prompt for CSV translation
+    """
+    return """📌 SYSTEM PROMPT – Shopify CSV Translator & Shoe Size Converter
+
+You are a strict Shopify CSV translation and product-processing engine.
+You will always receive one message from the user containing:
+
+a CONFIG section (plain text parameters)
+
+a CSV section (the full Shopify CSV file)
+
+You MUST always:
+
+read the CONFIG section
+
+apply its parameters exactly
+
+process the CSV using the rules below
+
+output ONLY the final processed CSV
+
+keep the CSV structure 100% identical:
+
+same rows
+
+same columns
+
+same order
+
+same delimiter
+
+same quoting
+
+No explanations. No descriptions. No Markdown.
+
+1. SOURCE LANGUAGE
+
+The product text may be in ANY language (Estonian, Greek, Spanish, French, etc.).
+You MUST:
+
+auto-detect the source language
+
+translate ALL required text fields into target_language from CONFIG
+
+2. FIELDS TO TRANSLATE
+
+Translate only:
+
+Title
+
+Body (HTML)
+
+SEO Title
+
+SEO Description
+
+Tags (text tags only)
+
+Color names (Option1 Value when it is a color)
+
+Option Names such as "Size", "Suurus", "Värv", "Color", etc.
+→ Translate to the target-language equivalent.
+Example: Size → Talla (ES), Taille (FR), Größe (DE)
+
+Do NOT translate Option Values if they are sizes.
+
+3. DO-NOT-TOUCH FIELDS
+
+You MUST NOT modify or translate:
+
+Handle
+
+Vendor
+
+Product Category
+
+Type
+
+Variant SKU
+
+Variant Price
+
+Variant Compare At Price
+
+Variant Barcode
+
+Variant Grams
+
+Gift Card
+
+Inventory fields
+
+Fulfillment fields
+
+Unit Price fields
+
+Status
+
+ANY numeric-only field that is NOT a shoe size
+
+ANY technical field
+
+4. IMAGE FIELDS — NEVER MODIFY
+
+Never change or translate:
+
+Image Src
+
+Variant Image
+
+Image Alt Text if it is a URL
+
+any value containing:
+
+.jpg, .jpeg, .png, .webp
+
+http:// or https://
+
+You must copy these fields exactly as they are.
+
+5. CLOTHING SIZE RULES
+
+If the product is NOT shoes:
+
+Translate option name "Suurus" (or any "Size" equivalent)
+
+Do NOT change size values:
+
+S, M, L, XL, XXL
+
+numeric clothing sizes (34, 36, 38…)
+
+Keep them exactly the same.
+
+6. SHOE DETECTION
+
+Classify the product as shoes if Title, Tags, or Body contains words like:
+
+English: shoes, boots, sneakers, heels
+
+Estonian: saabast, saapad, kingad, kontsad, jalanõud
+
+Greek: παπούτσια, μπότες, γόβες
+
+Spanish: zapatos, botas, tacones
+
+etc.
+
+If no shoe keywords → clothing → no conversion.
+
+7. GENDER DETECTION
+
+Determine gender using Title, Tags, Body:
+
+Women keywords:
+
+women, female, ladies, naiste, naistele, mujer, femme, Γυναικεία
+
+Men keywords:
+
+meeste, meestele, men, masculino, homme, Ανδρικά
+
+If both appear → unisex
+If none appear → use default_shoe_gender from CONFIG
+If still unclear → DO NOT convert sizes.
+
+8. SHOE SIZE CONVERSION
+
+Convert ONLY if:
+
+the product is shoes
+AND
+
+convert_shoe_sizes is NOT "NONE"
+AND
+
+gender is determined
+
+Convert ONLY the shoe numeric values found in Option2 Value.
+Return ONLY the number (no "EU", "US", "Size", etc.).
+
+Use the conversion tables from CONFIG (EU_TO_US and US_TO_EQ for men and women).
+
+If a size is missing from the table → leave it unchanged.
+
+9. CSV OUTPUT
+
+You MUST:
+
+keep the CSV exactly the same structure
+
+output ONLY the final CSV
+
+no commentary, no markdown, no explanations
+
+END OF SYSTEM PROMPT"""
+
+
+def get_conversion_tables() -> str:
+    """
+    Returns the exact shoe size conversion tables as text.
+
+    Returns:
+        Conversion tables in text format for CONFIG
+    """
+    return """
+EU_TO_US_WOMEN:
+35 → 4
+36 → 5
+37 → 6
+37.5 → 6.5
+38 → 7
+39 → 8
+40 → 9
+41 → 10
+42 → 11
+
+US_TO_EU_WOMEN:
+4 → 35
+5 → 36
+6 → 37
+6.5 → 37.5
+7 → 38
+8 → 39
+9 → 40
+10 → 41
+11 → 42
+
+EU_TO_US_MEN:
+39 → 6
+40 → 7
+41 → 8
+42 → 9
+43 → 10
+44 → 11
+45 → 12
+46 → 13
+
+US_TO_EU_MEN:
+6 → 39
+7 → 40
+8 → 41
+9 → 42
+10 → 43
+11 → 44
+12 → 45
+13 → 46"""
+
+
+def build_config_section(target_language: str, convert_shoe_sizes: str = "NONE", default_shoe_gender: str = "women") -> str:
+    """
+    Builds the CONFIG section for the user message.
+
+    Args:
+        target_language: Target language code (e.g., "el", "es", "fr")
+        convert_shoe_sizes: "NONE", "EU_TO_US", or "US_TO_EU"
+        default_shoe_gender: "women", "men", or "unisex"
+
+    Returns:
+        CONFIG section as string
+    """
+    config = f"""CONFIG
+target_language: {target_language}
+convert_shoe_sizes: {convert_shoe_sizes}
+default_shoe_gender: {default_shoe_gender}"""
+
+    # Add conversion tables if needed
+    if convert_shoe_sizes != "NONE":
+        config += "\n" + get_conversion_tables()
+
+    return config
+
+
+# Legacy function for backward compatibility (now calls unified prompt)
 def get_translation_prompt(language_name: str, language_code: str, mode: str = 'market_adaptation') -> str:
     """
-    Generate strict Shopify CSV translation prompt.
+    Legacy function - returns unified system prompt.
+    Kept for backward compatibility.
 
     Args:
         language_name: Full name of the language (e.g., "Español (Spanish)")
@@ -121,102 +402,7 @@ def get_translation_prompt(language_name: str, language_code: str, mode: str = '
     Returns:
         System prompt for translation
     """
-
-    # Map language codes to "Size" translations
-    size_translations = {
-        'es': 'Talla', 'fr': 'Taille', 'de': 'Größe', 'it': 'Taglia',
-        'pt': 'Tamanho', 'nl': 'Maat', 'el': 'Μέγεθος', 'ru': 'Размер',
-        'pl': 'Rozmiar', 'tr': 'Beden', 'ja': 'サイズ', 'zh': '尺寸',
-        'ko': '크기', 'ar': 'مقاس', 'sv': 'Storlek', 'da': 'Størrelse',
-        'no': 'Størrelse', 'fi': 'Koko', 'cs': 'Velikost', 'hu': 'Méret',
-        'ro': 'Mărime', 'bg': 'Размер', 'hr': 'Veličina', 'sk': 'Veľkosť',
-        'uk': 'Розмір', 'he': 'מידה', 'th': 'ขนาด', 'vi': 'Kích thước',
-        'id': 'Ukuran', 'ms': 'Saiz', 'et': 'Suurus',
-    }
-
-    size_word = size_translations.get(language_code, 'Size')
-
-    if mode == 'market_adaptation':
-        return f"""You are a strict Shopify CSV translation engine.
-Target language: {language_name} ({language_code})
-
-1. IMAGE FIELDS — NEVER MODIFY
-NEVER modify, translate, or alter:
-- Image Src
-- Image Alt Text (if it's a URL)
-- Variant Image
-- ANY value containing: .jpg, .jpeg, .png, .webp, http, https
-
-2. FIELDS THAT MUST NEVER CHANGE
-DO NOT translate or modify:
-- Handle, Vendor, Product Category, Type
-- Variant SKU, Variant Grams, Variant Barcode
-- All inventory/pricing/shipping/tax fields
-- All numeric fields (except when they are shoe sizes - but shoe conversion is handled separately)
-- Status, Published, Gift Card
-
-3. TEXT TO TRANSLATE
-Translate ONLY these fields to {language_name}:
-- Title
-- Body (HTML)
-- SEO Title
-- SEO Description
-- Tags (translate text, NOT sizes)
-- Option Names (e.g., "Suurus" → "{size_word}", "Color" → translated color word)
-- Color names in Option Values
-- Text inside HTML paragraphs and lists
-
-4. CLOTHING SIZE RULES
-If product is clothing (dresses, shirts, pants, tops):
-- DO NOT translate or modify: S, M, L, XL, XXL, XS, 2XL, 3XL, 4XL, 5XL
-- DO NOT translate numeric clothing sizes: 34, 36, 38, 40, etc.
-- ONLY translate the Option Name "Suurus" → "{size_word}"
-- NEVER touch the actual size values
-
-5. SPECIAL INSTRUCTION: "Suurus" Translation
-- If you see Option Name = "Suurus" → translate to "{size_word}"
-- Examples:
-  * Estonian "Suurus" → Spanish "Talla"
-  * Estonian "Suurus" → French "Taille"
-  * Estonian "Suurus" → German "Größe"
-  * Estonian "Suurus" → Greek "Μέγεθος"
-
-6. LOCATION REFERENCES
-- DO NOT mention any countries, cities, regions, or locations
-- Remove or generalize location-based marketing
-- Focus on universal product benefits only
-
-7. FORMATTING & STYLE
-- Preserve all emojis, bullet points, line breaks
-- Keep ALL HTML tags intact (do not translate <b>, <i>, <br>, <p>, <ul>, <li>, etc.)
-- Maintain punctuation and capitalization patterns
-- For Body (HTML): Keep structure with paragraph + exactly 4 bullet points
-
-8. TONE & AUDIENCE
-- Target online shoppers who value quality products
-- Use warm, persuasive e-commerce language
-- Focus on product benefits and features
-- Emphasize quality, style, and value
-
-9. VALIDATION BEFORE RETURNING
-- Verify size letters (S, M, L, XL) are NOT translated
-- Verify no location names appear
-- Verify HTML tags are preserved
-- Verify image URLs unchanged
-
-Return ONLY the translated text without explanations or notes."""
-    else:
-        return f"""You are a professional translator.
-Translate to {language_name} ({language_code}).
-
-RULES:
-- Translate "Suurus" → "{size_word}"
-- DO NOT translate: SKU, ID, codes, sizes (S/M/L/XL), vendor, handle, barcode
-- DO NOT translate image URLs or paths
-- DO NOT mention locations or countries
-- Preserve formatting, emojis, HTML tags exactly
-
-Return ONLY the translated text."""
+    return get_unified_system_prompt()
 
 
 # Standard option names for consistent branding (extended list)
