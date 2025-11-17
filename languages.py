@@ -126,31 +126,72 @@ def get_translation_prompt(language_name: str, language_code: str, mode: str = '
         return f"""You are a professional e-commerce translator specializing in product descriptions.
 Translate to {language_name} ({language_code}).
 
-AUDIENCE & TONE:
-- Target online shoppers who value quality products
-- Use warm, persuasive e-commerce language
-- Focus on product benefits and features
-- Maintain professional yet approachable tone
-- Emphasize quality, style, and value
+CRITICAL RULES - FOLLOW EXACTLY:
 
-TRANSLATION GUIDELINES:
-- Adapt to local e-commerce conventions
-- Use natural, conversational language for online shopping
-- Highlight product features that matter to customers
-- Keep descriptions clear and compelling
-- DO NOT mention any specific countries, regions, or locations
-- Focus only on the product itself and its universal benefits
-- Make it suitable for international audiences
+1. WHAT TO TRANSLATE:
+   - Product titles, descriptions, features, benefits
+   - Marketing copy, tags, collections
+   - Product attributes and characteristics
 
-IMPORTANT:
-- Remove or generalize any location references (countries, cities, regions)
-- Focus on product quality and features only
-- Make descriptions universally appealing"""
+2. WHAT TO PRESERVE (DO NOT TRANSLATE):
+   - Clothing sizes: S, M, L, XL, XXL, XS, numeric sizes (keep exactly as-is)
+   - SKU codes, product IDs, barcodes
+   - Vendor names, manufacturer codes
+   - Handle fields (URL slugs)
+   - Prices, weights, dimensions (numbers with units)
+   - Brand names (unless commonly translated)
+   - HTML tags and formatting codes
+
+3. SHOE SIZE HANDLING:
+   - Shoe sizes will be automatically converted between EU/US by the system
+   - You should translate the word "Size" but not modify the numbers
+   - Example: "Size 42" → "Μέγεθος 42" (Greek)
+
+4. OPTION NAMES & VALUES:
+   - Translate option names: "Color" → "Χρώμα", "Material" → "Υλικό"
+   - Translate option values EXCEPT sizes
+   - Examples:
+     * "Color: Blue" → "Χρώμα: Μπλε" ✓
+     * "Size: L" → "Μέγεθος: L" ✓ (keep L as-is)
+     * "Material: Cotton" → "Υλικό: Βαμβάκι" ✓
+
+5. LOCATION REFERENCES:
+   - DO NOT mention any countries, cities, regions, or locations
+   - Remove or generalize location-based marketing
+   - Focus on universal product benefits only
+   - Example: "Perfect for American markets" → "Perfect for online shoppers"
+
+6. FORMATTING & STYLE:
+   - Preserve all emojis, bullet points, line breaks
+   - Keep HTML tags intact (don't translate <b>, <i>, <br>, etc.)
+   - Maintain punctuation style and capitalization patterns
+   - Preserve spacing and structure
+
+7. TONE & AUDIENCE:
+   - Target online shoppers who value quality products
+   - Use warm, persuasive e-commerce language
+   - Focus on product benefits and features
+   - Maintain professional yet approachable tone
+   - Emphasize quality, style, and value
+
+8. VALIDATION:
+   - Before returning, verify you haven't translated size letters (S, M, L, XL, etc.)
+   - Verify no location names appear in translation
+   - Verify HTML/formatting is preserved
+   - Verify numbers and codes are unchanged
+
+Return ONLY the translated text without explanations or notes."""
     else:
         return f"""You are a professional translator.
 Translate the following text to {language_name} ({language_code}).
-Provide a literal, accurate translation.
-DO NOT mention any specific locations or countries."""
+
+RULES:
+- Provide a literal, accurate translation
+- DO NOT translate: SKU, ID, codes, sizes (S/M/L/XL), vendor, handle, barcode
+- DO NOT mention any specific locations or countries
+- Preserve formatting, emojis, and HTML tags exactly
+
+Return ONLY the translated text."""
 
 
 # Standard option names for consistent branding (extended list)

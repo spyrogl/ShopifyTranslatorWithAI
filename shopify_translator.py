@@ -436,6 +436,128 @@ class ShopifyTranslator:
 
         return cleaned_text.strip()
 
+    def detect_product_type(self, row: pd.Series) -> str:
+        """
+        Detect if product is clothing, shoes, or other.
+
+        Args:
+            row: DataFrame row with product data
+
+        Returns:
+            'shoes', 'clothing', or 'other'
+        """
+        # Keywords for shoe detection
+        shoe_keywords = [
+            'shoe', 'shoes', 'sneaker', 'sneakers', 'boot', 'boots',
+            'sandal', 'sandals', 'slipper', 'slippers', 'heel', 'heels',
+            'loafer', 'loafers', 'oxford', 'oxfords', 'trainer', 'trainers',
+            'footwear', 'παπούτσι', 'παπούτσια', 'μπότα', 'μπότες',
+            'zapato', 'zapatos', 'bota', 'botas', 'schuh', 'schuhe',
+            'chaussure', 'chaussures', 'scarpa', 'scarpe'
+        ]
+
+        # Keywords for clothing detection
+        clothing_keywords = [
+            't-shirt', 'tshirt', 'shirt', 'blouse', 'sweater', 'hoodie',
+            'jacket', 'coat', 'pants', 'trousers', 'jeans', 'shorts',
+            'dress', 'skirt', 'top', 'clothing', 'apparel', 'wear',
+            'μπλούζα', 'φόρεμα', 'παντελόνι', 'ρούχο', 'ένδυση',
+            'camiseta', 'camisa', 'pantalón', 'vestido', 'ropa',
+            'hemd', 'hose', 'kleid', 'kleidung', 'chemise', 'pantalon',
+            'robe', 'vêtement', 'maglietta', 'camicia', 'pantalone', 'vestito'
+        ]
+
+        # Check Title and Type fields
+        text_to_check = ""
+        if 'Title' in row.index and pd.notna(row['Title']):
+            text_to_check += str(row['Title']).lower() + " "
+        if 'Type' in row.index and pd.notna(row['Type']):
+            text_to_check += str(row['Type']).lower() + " "
+        if 'Body (HTML)' in row.index and pd.notna(row['Body (HTML)']):
+            text_to_check += str(row['Body (HTML)'])[:200].lower()  # First 200 chars
+
+        # Check for shoe keywords
+        for keyword in shoe_keywords:
+            if keyword in text_to_check:
+                return 'shoes'
+
+        # Check for clothing keywords
+        for keyword in clothing_keywords:
+            if keyword in text_to_check:
+                return 'clothing'
+
+        return 'other'
+
+    def is_clothing_size(self, value: str) -> bool:
+        """
+        Check if value is a clothing size that should NOT be translated.
+
+        Args:
+            value: Option value to check
+
+        Returns:
+            True if it's a clothing size (S, M, L, etc.)
+        """
+        if not value:
+            return False
+
+        value_upper = str(value).upper().strip()
+
+        # Standard letter sizes
+        if value_upper in STANDARD_SIZES:
+            return True
+
+        # Numeric sizes for clothing (e.g., 32, 34, 36 for waist/chest)
+        # These are typically in range 28-50 and even numbers
+        try:
+            num = float(value_upper)
+            if 28 <= num <= 60 and num % 2 == 0:
+                return True
+        except ValueError:
+            pass
+
+        # EU clothing sizes (e.g., "EU 38", "38 EU")
+        if re.match(r'^\d{2,3}\s*(EU|eu)?$', value_upper) or re.match(r'^(EU|eu)\s*\d{2,3}$', value_upper):
+            return True
+
+        return False
+
+    def validate_translation(self, original: str, translated: str, field_name: str = "") -> str:
+        """
+        Validate translation to ensure sizes and codes weren't translated.
+
+        Args:
+            original: Original text
+            translated: Translated text
+            field_name: Name of the field being translated
+
+        Returns:
+            Validated/corrected translation
+        """
+        if not translated or pd.isna(translated):
+            return translated
+
+        # For option values, check if clothing sizes were preserved
+        if field_name in ['Option1 Value', 'Option2 Value', 'Option3 Value']:
+            if self.is_clothing_size(original):
+                # Size should not be translated, return original
+                return original
+
+        # Check for common size abbreviations that might have been translated
+        size_pattern = r'\b(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL)\b'
+
+        # If original had sizes, make sure they're preserved in translation
+        original_sizes = set(re.findall(size_pattern, str(original), re.IGNORECASE))
+        if original_sizes:
+            # Ensure these sizes appear in the translation
+            for size in original_sizes:
+                if size.upper() not in str(translated).upper():
+                    # Size was lost in translation - this shouldn't happen
+                    # but if it does, try to preserve it
+                    self.print_warning(f"Size '{size}' may have been lost in translation of: {original[:50]}...")
+
+        return translated
+
     def translate_text(self, text: str, settings: Dict, field_name: str = "") -> str:
         """Translate text using OpenAI API with caching"""
         if pd.isna(text) or text == "":
@@ -462,9 +584,10 @@ class ShopifyTranslator:
         if cache_key in self.cache:
             return self.cache[cache_key]
 
-        # Skip translation for standard sizes
-        if field_name in ['Option2 Value', 'Option3 Value'] and str(text).upper() in STANDARD_SIZES:
-            return text
+        # Skip translation for clothing sizes (S, M, L, XL, etc.)
+        if field_name in ['Option1 Value', 'Option2 Value', 'Option3 Value']:
+            if self.is_clothing_size(text):
+                return text
 
         # Build prompt
         lang_info = MARKET_ADAPTATIONS[settings['target_language']]
@@ -536,16 +659,19 @@ IMPORTANT:
 
             translated = response.choices[0].message.content.strip()
 
+            # Validate translation before caching
+            validated_translation = self.validate_translation(text, translated, field_name)
+
             # Update cost tracking
             self.total_tokens += response.usage.total_tokens
 
-            # Cache the translation
-            self.cache[cache_key] = translated
+            # Cache the validated translation
+            self.cache[cache_key] = validated_translation
 
             # Small delay to respect rate limits
             time.sleep(0.5)
 
-            return translated
+            return validated_translation
 
         except Exception as e:
             self.print_warning(f"Translation failed for text (keeping original): {str(e)[:50]}")
