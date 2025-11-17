@@ -686,12 +686,12 @@ IMPORTANT:
         # Create output directory
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-        # Generate output filename
-        timestamp = datetime.now().strftime("%Y%m%d")
-        lang_name = settings['target_language']
-        original_name = os.path.basename(self.backup_path).replace('backup_', '').replace('.csv', '')
-
-        output_filename = f"{original_name}_{lang_name}_{timestamp}.csv"
+        # Generate output filename: TranslatedWithAI{count}{DDMMYYYY}{HHMM}
+        now = datetime.now()
+        product_count = self.df['Handle'].nunique() if 'Handle' in self.df.columns else len(self.df)
+        date_str = now.strftime('%d%m%Y')  # DDMMYYYY
+        time_str = now.strftime('%H%M')     # HHMM
+        output_filename = f"TranslatedWithAI{product_count}{date_str}{time_str}.csv"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
 
         # Save CSV

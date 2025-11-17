@@ -334,9 +334,19 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
 
         # Save output
         translation_sessions[session_id]['message'] = 'Saving output...'
-        output_filename = f"{os.path.basename(filepath).replace('.csv', '')}_{target_language}_{datetime.now().strftime('%Y%m%d')}.csv"
+
+        # Generate new filename format: TranslatedWithAI{count}{DDMMYYYY}{HHMM}
+        now = datetime.now()
+        product_count = len(unique_handles)
+        date_str = now.strftime('%d%m%Y')  # DDMMYYYY
+        time_str = now.strftime('%H%M')     # HHMM
+        output_filename = f"TranslatedWithAI{product_count}{date_str}{time_str}.csv"
+
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         translator.df.to_csv(output_path, index=False, encoding='utf-8')
+
+        # Get preview data (first 5 rows)
+        preview_data = translator.df.head(10).to_dict('records')
 
         # Calculate cost
         if model == 'gpt-4o-mini':
@@ -353,6 +363,8 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
         translation_sessions[session_id]['output_file'] = output_filename
         translation_sessions[session_id]['total_tokens'] = translator.total_tokens
         translation_sessions[session_id]['total_cost'] = round(total_cost, 3)
+        translation_sessions[session_id]['product_count'] = product_count
+        translation_sessions[session_id]['preview_data'] = preview_data
 
     except Exception as e:
         translation_sessions[session_id]['status'] = 'error'

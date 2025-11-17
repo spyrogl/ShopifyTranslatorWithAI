@@ -581,11 +581,33 @@ Examples:
             <div id="successMessage" class="success-message">
                 <h2 style="margin-bottom: 20px;">✅ Translation Complete!</h2>
                 <p style="font-size: 1.2em; margin-bottom: 20px;">Your translated file is ready to download.</p>
-                <button class="btn" onclick="downloadFile()" id="downloadBtn">📥 Download Translated File</button>
-                <p style="margin-top: 20px; color: #666;">
-                    <strong>Total tokens:</strong> <span id="totalTokens">-</span><br>
-                    <strong>Total cost:</strong> $<span id="totalCost">-</span>
-                </p>
+
+                <div style="margin-bottom: 30px;">
+                    <p style="font-size: 1.1em; color: #666; margin-bottom: 10px;">
+                        <strong>📊 Products translated:</strong> <span id="productCount">-</span><br>
+                        <strong>💰 Total tokens:</strong> <span id="totalTokens">-</span><br>
+                        <strong>💵 Total cost:</strong> $<span id="totalCost">-</span><br>
+                        <strong>📁 Filename:</strong> <span id="outputFilename" style="font-family: monospace; background: #f0f0f0; padding: 2px 8px; border-radius: 4px;">-</span>
+                    </p>
+                </div>
+
+                <button class="btn" onclick="downloadFile()" id="downloadBtn" style="margin-bottom: 30px;">📥 Download Translated File</button>
+
+                <!-- Preview Section -->
+                <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border: 2px solid #667eea;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">👁️ Preview Results (First 10 rows)</h3>
+                    <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+                        <table id="previewTable" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                            <thead style="background: #667eea; color: white; position: sticky; top: 0;">
+                                <tr id="previewHeaders"></tr>
+                            </thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 15px; color: #888; font-size: 0.9em; font-style: italic;">
+                        ℹ️ This is a preview of your translated data. Check if everything looks correct before downloading.
+                    </p>
+                </div>
             </div>
 
             <div id="errorMessage" class="error-message">
@@ -877,8 +899,16 @@ Examples:
 
                 if (data.status === 'completed') {
                     outputFilename = data.output_file;
+                    document.getElementById('productCount').textContent = data.product_count || '-';
                     document.getElementById('totalTokens').textContent = data.total_tokens.toLocaleString();
                     document.getElementById('totalCost').textContent = data.total_cost.toFixed(3);
+                    document.getElementById('outputFilename').textContent = data.output_file || '-';
+
+                    // Populate preview table
+                    if (data.preview_data && data.preview_data.length > 0) {
+                        populatePreviewTable(data.preview_data);
+                    }
+
                     document.getElementById('successMessage').style.display = 'block';
                     document.getElementById('translateBtn').disabled = false;
                 } else if (data.status === 'error') {
@@ -903,6 +933,55 @@ Examples:
             document.getElementById('errorText').textContent = message;
             document.getElementById('errorMessage').style.display = 'block';
             document.getElementById('translateBtn').disabled = false;
+        }
+
+        // Populate preview table
+        function populatePreviewTable(data) {
+            if (!data || data.length === 0) return;
+
+            // Get headers from first row
+            const headers = Object.keys(data[0]);
+            const headersRow = document.getElementById('previewHeaders');
+            const body = document.getElementById('previewBody');
+
+            // Clear existing content
+            headersRow.innerHTML = '';
+            body.innerHTML = '';
+
+            // Add headers
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                th.style.padding = '12px';
+                th.style.textAlign = 'left';
+                th.style.borderBottom = '2px solid white';
+                headersRow.appendChild(th);
+            });
+
+            // Add rows
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.style.background = index % 2 === 0 ? '#f8f9fa' : 'white';
+                tr.style.transition = 'background 0.2s ease';
+                tr.onmouseover = function() { this.style.background = '#e7f3ff'; };
+                tr.onmouseout = function() { this.style.background = index % 2 === 0 ? '#f8f9fa' : 'white'; };
+
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    const value = row[header];
+                    td.textContent = value !== null && value !== undefined ? value : '';
+                    td.style.padding = '10px 12px';
+                    td.style.borderBottom = '1px solid #e0e0e0';
+                    td.style.maxWidth = '300px';
+                    td.style.overflow = 'hidden';
+                    td.style.textOverflow = 'ellipsis';
+                    td.style.whiteSpace = 'nowrap';
+                    td.title = value; // Show full value on hover
+                    tr.appendChild(td);
+                });
+
+                body.appendChild(tr);
+            });
         }
     </script>
 </body>
