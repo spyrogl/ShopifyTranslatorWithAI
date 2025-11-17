@@ -18,7 +18,7 @@ from colorama import init, Fore, Back, Style
 from tqdm import tqdm
 
 # Import language definitions
-from languages import ALL_LANGUAGES, get_translation_prompt, get_unified_system_prompt, build_config_section, STANDARD_OPTION_NAMES_EXTENDED
+from languages import ALL_LANGUAGES, get_translation_prompt, get_unified_system_prompt, get_simple_translation_prompt, build_config_section, STANDARD_OPTION_NAMES_EXTENDED
 
 # Initialize colorama for cross-platform colored output
 init(autoreset=True)
@@ -592,8 +592,8 @@ class ShopifyTranslator:
         # Build prompt with CONFIG section
         lang_info = MARKET_ADAPTATIONS[settings['target_language']]
 
-        # Use the unified system prompt
-        system_prompt = get_unified_system_prompt()
+        # Use the SIMPLE translation prompt for field-by-field translation
+        system_prompt = get_simple_translation_prompt()
 
         # Build CONFIG section for user message
         config_section = build_config_section(
@@ -605,6 +605,10 @@ class ShopifyTranslator:
         # Add special instructions if provided
         if settings.get('special_instructions'):
             config_section += f"\nspecial_instructions: {settings['special_instructions']}"
+
+        # Add field type hint for better translation
+        if field_name:
+            config_section += f"\nfield_type: {field_name}"
 
         # Build user message with CONFIG + TEXT format
         user_message = f"""{config_section}

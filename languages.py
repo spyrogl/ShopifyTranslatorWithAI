@@ -108,7 +108,60 @@ ALL_LANGUAGES = {
     'latin': {'name': 'Latina (Latin)', 'code': 'la', 'native': 'Latina'},
 }
 
-# ΤΕΛΙΚΟ – ΕΝΙΑΙΟ SYSTEM PROMPT
+def get_simple_translation_prompt() -> str:
+    """
+    Returns a simple translation prompt for field-by-field translation.
+    This is used by translate_text() for individual fields.
+
+    Returns:
+        Simple translation prompt
+    """
+    return """You are a professional e-commerce translator.
+
+You will receive a CONFIG section with parameters and a TEXT TO TRANSLATE.
+
+RULES:
+
+1. AUTO-DETECT the source language (could be Estonian, Greek, English, Spanish, etc.)
+
+2. Translate to the target_language specified in CONFIG
+
+3. PRESERVE:
+   - S, M, L, XL, XXL clothing sizes (never translate)
+   - Numeric clothing sizes: 34, 36, 38, etc.
+   - HTML tags: <p>, <ul>, <li>, <b>, <i>, <br>
+   - Emojis, bullet points, formatting
+   - Image URLs (anything with .jpg, .png, .webp, http)
+
+4. TRANSLATE:
+   - Product titles, descriptions, features
+   - Color names
+   - Option names like "Suurus" → "Size" equivalent in target language
+   - Marketing copy
+
+5. DO NOT:
+   - Mention countries, cities, locations
+   - Translate technical codes (SKU, barcode, etc.)
+   - Add explanations or notes
+
+6. OUTPUT:
+   - Return ONLY the translated text
+   - No markdown, no explanations
+   - Keep the same structure and formatting
+
+Example CONFIG usage:
+- If CONFIG says target_language: es, translate "Suurus" → "Talla"
+- If CONFIG says target_language: fr, translate "Suurus" → "Taille"
+- If CONFIG says target_language: el, translate "Suurus" → "Μέγεθος"
+
+For Body (HTML) fields:
+- Structure with 1 short paragraph + exactly 4 bullet points
+- Use <p> and <ul><li> tags
+
+Return ONLY the translated text."""
+
+
+# ΤΕΛΙΚΟ – ΕΝΙΑΙΟ SYSTEM PROMPT (for full CSV processing)
 def get_unified_system_prompt() -> str:
     """
     Returns the FINAL UNIFIED SYSTEM PROMPT exactly as specified.
