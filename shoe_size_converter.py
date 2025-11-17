@@ -7,72 +7,92 @@ Converts between US and EU shoe sizes with automatic gender detection
 import re
 from typing import Tuple, Optional
 
-# Shoe size conversion tables
-# Men's shoes: EU = US + 33
-MENS_SHOE_SIZES = {
-    # US: EU
-    6: 39,
-    6.5: 39.5,
-    7: 40,
-    7.5: 40.5,
-    8: 41,
-    8.5: 41.5,
-    9: 42,
-    9.5: 42.5,
-    10: 43,
-    10.5: 43.5,
-    11: 44,
-    11.5: 44.5,
-    12: 45,
-    12.5: 45.5,
-    13: 46,
-    13.5: 46.5,
-    14: 47,
-    15: 48,
+# Shoe size conversion tables - EXACT mappings from FINAL SYSTEM PROMPT
+# Women's shoes: Exact conversion table
+WOMENS_SHOE_SIZES = {
+    # US: EU (from SYSTEM PROMPT)
+    4: 35,
+    5: 36,
+    6: 37,
+    6.5: 37.5,
+    7: 38,
+    8: 39,
+    9: 40,
+    10: 41,
+    11: 42,
 }
 
-# Women's shoes: EU = US + 30
-WOMENS_SHOE_SIZES = {
-    # US: EU
-    4: 34,
-    4.5: 34.5,
-    5: 35,
-    5.5: 35.5,
-    6: 36,
-    6.5: 36.5,
-    7: 37,
-    7.5: 37.5,
-    8: 38,
-    8.5: 38.5,
-    9: 39,
-    9.5: 39.5,
-    10: 40,
-    10.5: 40.5,
-    11: 41,
-    11.5: 41.5,
-    12: 42,
+# Men's shoes: Exact conversion table
+MENS_SHOE_SIZES = {
+    # US: EU (from SYSTEM PROMPT)
+    6: 39,
+    7: 40,
+    8: 41,
+    9: 42,
+    10: 43,
+    11: 44,
+    12: 45,
+    13: 46,
 }
 
 # Create reverse mappings (EU to US)
 MENS_EU_TO_US = {v: k for k, v in MENS_SHOE_SIZES.items()}
 WOMENS_EU_TO_US = {v: k for k, v in WOMENS_SHOE_SIZES.items()}
 
-# Keywords for gender detection
+# Keywords for shoe/product detection
+SHOE_KEYWORDS = [
+    'shoes', 'shoe', 'boots', 'boot', 'heels', 'heel', 'sneakers', 'sneaker',
+    'saapad', 'kontsad', 'kingad',  # Estonian
+    'παπούτσι', 'παπούτσια', 'μπότες', 'μπότα',  # Greek
+]
+
+# Keywords for gender detection (from FINAL SYSTEM PROMPT)
 WOMENS_KEYWORDS = [
     'women', 'woman', 'womens', "women's", 'ladies', 'lady', 'female',
-    'γυναικεία', 'γυναικείο', 'γυναίκα', 'dames', 'vrouwen',
-    'damen', 'femme', 'mujer', 'donna'
+    'naiste', 'naistele', 'woman shoes', 'women shoes', 'kontsad', 'kingad naistele',  # Estonian
+    'γυναικεία', 'γυναικείο', 'γυναίκα',  # Greek
+    'dames', 'vrouwen',  # Dutch
+    'damen',  # German
+    'femme',  # French
+    'mujer',  # Spanish
+    'donna',  # Italian
 ]
 
 MENS_KEYWORDS = [
     'men', 'man', 'mens', "men's", 'male', 'gentleman', 'gent',
-    'ανδρικά', 'ανδρικό', 'άνδρας', 'heren', 'mannen',
-    'herren', 'homme', 'hombre', 'uomo'
+    'meeste', 'mehed', 'meestele', 'meeste saapad', 'meeste kingad',  # Estonian
+    'oxford shoes', 'derby shoes', "men's shoes",
+    'ανδρικά', 'ανδρικό', 'άνδρας',  # Greek
+    'heren', 'mannen',  # Dutch
+    'herren',  # German
+    'homme',  # French
+    'hombre',  # Spanish
+    'uomo',  # Italian
 ]
 
 
 class ShoeSizeConverter:
     """Convert shoe sizes between US and EU with gender detection"""
+
+    @staticmethod
+    def is_shoe_product(text: str, tags: str = "") -> bool:
+        """
+        Detect if product is shoes based on keywords.
+
+        Args:
+            text: Product title, description, or type
+            tags: Product tags
+
+        Returns:
+            True if product is shoes
+        """
+        combined_text = f"{text} {tags}".lower()
+
+        for keyword in SHOE_KEYWORDS:
+            if keyword.lower() in combined_text:
+                return True
+
+        return False
 
     @staticmethod
     def detect_gender(text: str) -> str:

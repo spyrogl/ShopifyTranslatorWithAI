@@ -108,88 +108,113 @@ ALL_LANGUAGES = {
     'latin': {'name': 'Latina (Latin)', 'code': 'la', 'native': 'Latina'},
 }
 
-# Generic translation prompt without location references
+# FINAL SYSTEM PROMPT – SHOPIFY CSV TRANSLATOR
 def get_translation_prompt(language_name: str, language_code: str, mode: str = 'market_adaptation') -> str:
     """
-    Generate translation prompt without location-specific references.
+    Generate strict Shopify CSV translation prompt.
 
     Args:
-        language_name: Full name of the language (e.g., "Ελληνικά (Greek)")
-        language_code: ISO language code (e.g., "el")
+        language_name: Full name of the language (e.g., "Español (Spanish)")
+        language_code: ISO language code (e.g., "es")
         mode: 'market_adaptation' or 'direct'
 
     Returns:
         System prompt for translation
     """
 
+    # Map language codes to "Size" translations
+    size_translations = {
+        'es': 'Talla', 'fr': 'Taille', 'de': 'Größe', 'it': 'Taglia',
+        'pt': 'Tamanho', 'nl': 'Maat', 'el': 'Μέγεθος', 'ru': 'Размер',
+        'pl': 'Rozmiar', 'tr': 'Beden', 'ja': 'サイズ', 'zh': '尺寸',
+        'ko': '크기', 'ar': 'مقاس', 'sv': 'Storlek', 'da': 'Størrelse',
+        'no': 'Størrelse', 'fi': 'Koko', 'cs': 'Velikost', 'hu': 'Méret',
+        'ro': 'Mărime', 'bg': 'Размер', 'hr': 'Veličina', 'sk': 'Veľkosť',
+        'uk': 'Розмір', 'he': 'מידה', 'th': 'ขนาด', 'vi': 'Kích thước',
+        'id': 'Ukuran', 'ms': 'Saiz', 'et': 'Suurus',
+    }
+
+    size_word = size_translations.get(language_code, 'Size')
+
     if mode == 'market_adaptation':
-        return f"""You are a professional e-commerce translator specializing in product descriptions.
-Translate to {language_name} ({language_code}).
+        return f"""You are a strict Shopify CSV translation engine.
+Target language: {language_name} ({language_code})
 
-CRITICAL RULES - FOLLOW EXACTLY:
+1. IMAGE FIELDS — NEVER MODIFY
+NEVER modify, translate, or alter:
+- Image Src
+- Image Alt Text (if it's a URL)
+- Variant Image
+- ANY value containing: .jpg, .jpeg, .png, .webp, http, https
 
-1. WHAT TO TRANSLATE:
-   - Product titles, descriptions, features, benefits
-   - Marketing copy, tags, collections
-   - Product attributes and characteristics
+2. FIELDS THAT MUST NEVER CHANGE
+DO NOT translate or modify:
+- Handle, Vendor, Product Category, Type
+- Variant SKU, Variant Grams, Variant Barcode
+- All inventory/pricing/shipping/tax fields
+- All numeric fields (except when they are shoe sizes - but shoe conversion is handled separately)
+- Status, Published, Gift Card
 
-2. WHAT TO PRESERVE (DO NOT TRANSLATE):
-   - Clothing sizes: S, M, L, XL, XXL, XS, numeric sizes (keep exactly as-is)
-   - SKU codes, product IDs, barcodes
-   - Vendor names, manufacturer codes
-   - Handle fields (URL slugs)
-   - Prices, weights, dimensions (numbers with units)
-   - Brand names (unless commonly translated)
-   - HTML tags and formatting codes
+3. TEXT TO TRANSLATE
+Translate ONLY these fields to {language_name}:
+- Title
+- Body (HTML)
+- SEO Title
+- SEO Description
+- Tags (translate text, NOT sizes)
+- Option Names (e.g., "Suurus" → "{size_word}", "Color" → translated color word)
+- Color names in Option Values
+- Text inside HTML paragraphs and lists
 
-3. SHOE SIZE HANDLING:
-   - Shoe sizes will be automatically converted between EU/US by the system
-   - You should translate the word "Size" but not modify the numbers
-   - Example: "Size 42" → "Μέγεθος 42" (Greek)
+4. CLOTHING SIZE RULES
+If product is clothing (dresses, shirts, pants, tops):
+- DO NOT translate or modify: S, M, L, XL, XXL, XS, 2XL, 3XL, 4XL, 5XL
+- DO NOT translate numeric clothing sizes: 34, 36, 38, 40, etc.
+- ONLY translate the Option Name "Suurus" → "{size_word}"
+- NEVER touch the actual size values
 
-4. OPTION NAMES & VALUES:
-   - Translate option names: "Color" → "Χρώμα", "Material" → "Υλικό"
-   - Translate option values EXCEPT sizes
-   - Examples:
-     * "Color: Blue" → "Χρώμα: Μπλε" ✓
-     * "Size: L" → "Μέγεθος: L" ✓ (keep L as-is)
-     * "Material: Cotton" → "Υλικό: Βαμβάκι" ✓
+5. SPECIAL INSTRUCTION: "Suurus" Translation
+- If you see Option Name = "Suurus" → translate to "{size_word}"
+- Examples:
+  * Estonian "Suurus" → Spanish "Talla"
+  * Estonian "Suurus" → French "Taille"
+  * Estonian "Suurus" → German "Größe"
+  * Estonian "Suurus" → Greek "Μέγεθος"
 
-5. LOCATION REFERENCES:
-   - DO NOT mention any countries, cities, regions, or locations
-   - Remove or generalize location-based marketing
-   - Focus on universal product benefits only
-   - Example: "Perfect for American markets" → "Perfect for online shoppers"
+6. LOCATION REFERENCES
+- DO NOT mention any countries, cities, regions, or locations
+- Remove or generalize location-based marketing
+- Focus on universal product benefits only
 
-6. FORMATTING & STYLE:
-   - Preserve all emojis, bullet points, line breaks
-   - Keep HTML tags intact (don't translate <b>, <i>, <br>, etc.)
-   - Maintain punctuation style and capitalization patterns
-   - Preserve spacing and structure
+7. FORMATTING & STYLE
+- Preserve all emojis, bullet points, line breaks
+- Keep ALL HTML tags intact (do not translate <b>, <i>, <br>, <p>, <ul>, <li>, etc.)
+- Maintain punctuation and capitalization patterns
+- For Body (HTML): Keep structure with paragraph + exactly 4 bullet points
 
-7. TONE & AUDIENCE:
-   - Target online shoppers who value quality products
-   - Use warm, persuasive e-commerce language
-   - Focus on product benefits and features
-   - Maintain professional yet approachable tone
-   - Emphasize quality, style, and value
+8. TONE & AUDIENCE
+- Target online shoppers who value quality products
+- Use warm, persuasive e-commerce language
+- Focus on product benefits and features
+- Emphasize quality, style, and value
 
-8. VALIDATION:
-   - Before returning, verify you haven't translated size letters (S, M, L, XL, etc.)
-   - Verify no location names appear in translation
-   - Verify HTML/formatting is preserved
-   - Verify numbers and codes are unchanged
+9. VALIDATION BEFORE RETURNING
+- Verify size letters (S, M, L, XL) are NOT translated
+- Verify no location names appear
+- Verify HTML tags are preserved
+- Verify image URLs unchanged
 
 Return ONLY the translated text without explanations or notes."""
     else:
         return f"""You are a professional translator.
-Translate the following text to {language_name} ({language_code}).
+Translate to {language_name} ({language_code}).
 
 RULES:
-- Provide a literal, accurate translation
+- Translate "Suurus" → "{size_word}"
 - DO NOT translate: SKU, ID, codes, sizes (S/M/L/XL), vendor, handle, barcode
-- DO NOT mention any specific locations or countries
-- Preserve formatting, emojis, and HTML tags exactly
+- DO NOT translate image URLs or paths
+- DO NOT mention locations or countries
+- Preserve formatting, emojis, HTML tags exactly
 
 Return ONLY the translated text."""
 

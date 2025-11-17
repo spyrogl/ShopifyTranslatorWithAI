@@ -146,6 +146,7 @@ def start_translation():
         fields = data.get('fields', [])
         special_instructions = data.get('special_instructions', '')
         shoe_conversion = data.get('shoe_conversion', 'none')
+        default_gender = data.get('default_gender', 'women')
 
         if not all([filepath, api_key, target_language, fields]):
             return jsonify({'error': 'Missing required parameters'}), 400
@@ -169,7 +170,7 @@ def start_translation():
         import threading
         thread = threading.Thread(
             target=run_translation,
-            args=(session_id, filepath, target_language, translation_mode, model, fields, special_instructions, shoe_conversion)
+            args=(session_id, filepath, target_language, translation_mode, model, fields, special_instructions, shoe_conversion, default_gender)
         )
         thread.daemon = True
         thread.start()
@@ -202,7 +203,7 @@ def download_file(filename):
         return jsonify({'error': str(e)}), 404
 
 
-def run_translation(session_id, filepath, target_language, translation_mode, model, fields, special_instructions, shoe_conversion):
+def run_translation(session_id, filepath, target_language, translation_mode, model, fields, special_instructions, shoe_conversion, default_gender='women'):
     """Run translation in background"""
     try:
         # Update status
@@ -291,17 +292,32 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
             from shoe_size_converter import ShoeSizeConverter
 
             # Size keywords in various languages
-            size_keywords = ['size', 'μέγεθος', 'talla', 'maat', 'größe', 'taille', 'taglia', 'tamanho']
+            size_keywords = ['size', 'μέγεθος', 'talla', 'maat', 'größe', 'taille', 'taglia', 'tamanho', 'suurus']
 
             for idx, row in translator.df.iterrows():
-                # Get context for gender detection (title, type, etc.)
+                # Get context for gender and shoe detection
                 context = ""
+                tags = ""
                 if 'Title' in translator.df.columns:
                     context += str(row.get('Title', '')) + " "
                 if 'Type' in translator.df.columns:
                     context += str(row.get('Type', '')) + " "
+                if 'Tags' in translator.df.columns:
+                    tags = str(row.get('Tags', ''))
                 if 'Body (HTML)' in translator.df.columns:
                     context += str(row.get('Body (HTML)', ''))[:200]  # First 200 chars
+
+                # Check if this product is shoes (according to SYSTEM PROMPT rules)
+                is_shoe_product = ShoeSizeConverter.is_shoe_product(context, tags)
+
+                # Only convert if it's a shoe product
+                if not is_shoe_product:
+                    continue
+
+                # Detect gender (or use default if cannot detect)
+                detected_gender = ShoeSizeConverter.detect_gender(context)
+                if detected_gender == 'unknown':
+                    detected_gender = default_gender  # Use default from user selection
 
                 # Check each Option field
                 for i in [1, 2, 3]:
@@ -318,19 +334,23 @@ def run_translation(session_id, filepath, target_language, translation_mode, mod
                     if is_size_field and value_field in translator.df.columns:
                         value = row.get(value_field)
                         if pd.notna(value) and value != "":
-                            # Convert based on direction
-                            if shoe_conversion == 'us_to_eu':
-                                converted = ShoeSizeConverter.convert_size_in_text(
-                                    str(value), 'us_to_eu', context, is_size_field=True
-                                )
-                            elif shoe_conversion == 'eu_to_us':
-                                converted = ShoeSizeConverter.convert_size_in_text(
-                                    str(value), 'eu_to_us', context, is_size_field=True
-                                )
-                            else:
-                                converted = value
+                            # Convert based on direction with detected gender
+                            try:
+                                value_num = float(str(value).strip())
+                                converted_num = None
 
-                            translator.df.at[idx, value_field] = converted
+                                if shoe_conversion == 'us_to_eu':
+                                    converted_num = ShoeSizeConverter.us_to_eu(value_num, detected_gender, context)
+                                elif shoe_conversion == 'eu_to_us':
+                                    converted_num = ShoeSizeConverter.eu_to_us(value_num, detected_gender, context)
+
+                                # Return only numeric size (no "EU", "US", "size")
+                                if converted_num:
+                                    converted = str(int(converted_num) if converted_num == int(converted_num) else converted_num)
+                                    translator.df.at[idx, value_field] = converted
+                            except (ValueError, TypeError):
+                                # If not a number, keep as is
+                                pass
 
         # Save output
         translation_sessions[session_id]['message'] = 'Saving output...'

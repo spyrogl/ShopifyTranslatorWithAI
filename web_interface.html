@@ -522,6 +522,34 @@ Examples:
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Default Shoe Gender (if not detected)</label>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="defaultGender" value="women" checked>
+                        <div class="radio-label">
+                            <strong>Women</strong><br>
+                            <span style="color: #888;">Use women's conversion table when gender is unclear</span>
+                        </div>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="defaultGender" value="men">
+                        <div class="radio-label">
+                            <strong>Men</strong><br>
+                            <span style="color: #888;">Use men's conversion table when gender is unclear</span>
+                        </div>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="defaultGender" value="unisex">
+                        <div class="radio-label">
+                            <strong>Unisex / Auto-detect</strong><br>
+                            <span style="color: #888;">Try to detect gender automatically based on size ranges</span>
+                        </div>
+                    </label>
+                </div>
+                <span class="help-text">💡 The system will try to detect gender from product title/tags. This is the fallback option.</span>
+            </div>
+
             <div class="button-group">
                 <button class="btn btn-secondary" onclick="showTab(0)">← Back</button>
                 <button class="btn" onclick="showTab(2)">Next: Select Fields →</button>
@@ -797,6 +825,7 @@ Examples:
             const mode = document.querySelector('input[name="mode"]:checked').nextElementSibling.querySelector('strong').textContent;
             const model = document.querySelector('input[name="model"]:checked').nextElementSibling.querySelector('strong').textContent;
             const shoeConversion = document.querySelector('input[name="shoeConversion"]:checked').nextElementSibling.querySelector('strong').textContent;
+            const defaultGender = document.querySelector('input[name="defaultGender"]:checked').nextElementSibling.querySelector('strong').textContent;
             const selectedFields = Array.from(document.querySelectorAll('#fieldsList input:checked')).map(cb => cb.value);
             const specialInstructions = document.getElementById('specialInstructions').value.trim();
 
@@ -807,6 +836,7 @@ Examples:
                 <strong>🔄 Mode:</strong> ${mode}<br>
                 <strong>🤖 Model:</strong> ${model}<br>
                 <strong>👟 Shoe Conversion:</strong> ${shoeConversion}<br>
+                <strong>👥 Default Gender:</strong> ${defaultGender}<br>
                 <strong>☑️ Fields:</strong> ${selectedFields.length} selected<br>
                 ${specialInstructions ? `<strong>✨ Instructions:</strong> ${specialInstructions.substring(0, 100)}${specialInstructions.length > 100 ? '...' : ''}<br>` : ''}
                 <br>
@@ -821,6 +851,7 @@ Examples:
             const mode = document.querySelector('input[name="mode"]:checked').value;
             const model = document.querySelector('input[name="model"]:checked').value;
             const shoeConversion = document.querySelector('input[name="shoeConversion"]:checked').value;
+            const defaultGender = document.querySelector('input[name="defaultGender"]:checked').value;
             const selectedFields = Array.from(document.querySelectorAll('#fieldsList input:checked')).map(cb => cb.value);
             const specialInstructions = document.getElementById('specialInstructions').value.trim();
 
@@ -869,7 +900,8 @@ Examples:
                         model: model,
                         fields: selectedFields,
                         special_instructions: specialInstructions,
-                        shoe_conversion: shoeConversion
+                        shoe_conversion: shoeConversion,
+                        default_gender: defaultGender
                     })
                 });
 
