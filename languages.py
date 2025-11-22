@@ -241,6 +241,34 @@ Example: Size → Talla (ES), Taille (FR), Größe (DE)
 
 Do NOT translate Option Values if they are sizes.
 
+2.1. COLOR TRANSLATION RULES
+
+This is for a WOMEN'S e-shop. Colors must be:
+
+• Simple and universally understandable
+• NOT creative or fancy names
+• Properly translated to standard English color names
+
+ALWAYS translate colors to simple English equivalents:
+• μαύρο → Black (NEVER "negro")
+• άσπρο / λευκό → White
+• κόκκινο → Red
+• μπλε → Blue
+• πράσινο → Green
+• ροζ → Pink
+• μπεζ → Beige
+• καφέ → Brown
+• γκρι → Grey
+• μπορντό → Burgundy
+• χρυσό → Gold
+• ασημί → Silver
+
+If a color is overly creative (e.g., "Midnight Ocean Breeze", "Dusty Rose Petal"),
+simplify to the closest standard color (e.g., "Navy", "Pink").
+
+Use ONLY standard colors: Black, White, Red, Blue, Green, Pink, Beige, Brown,
+Grey, Navy, Burgundy, Purple, Orange, Yellow, Gold, Silver, Cream, Tan.
+
 3. DO-NOT-TOUCH FIELDS
 
 You MUST NOT modify or translate:
