@@ -247,27 +247,38 @@ This is for a WOMEN'S e-shop. Colors must be:
 
 • Simple and universally understandable
 • NOT creative or fancy names
-• Properly translated to standard English color names
+• Properly translated to the TARGET LANGUAGE specified in CONFIG
 
-ALWAYS translate colors to simple English equivalents:
-• μαύρο → Black (NEVER "negro")
-• άσπρο / λευκό → White
-• κόκκινο → Red
-• μπλε → Blue
-• πράσινο → Green
-• ροζ → Pink
-• μπεζ → Beige
-• καφέ → Brown
-• γκρι → Grey
-• μπορντό → Burgundy
-• χρυσό → Gold
-• ασημί → Silver
+ALWAYS translate colors to simple, standard color names in the target language.
+
+Examples for different target languages:
+
+If target_language = English:
+• μαύρο → Black
+• noir → Black
+• negro (ES) → Black
+• schwarz → Black
+
+If target_language = Greek:
+• black → Μαύρο
+• noir → Μαύρο
+• negro (ES) → Μαύρο
+
+If target_language = Spanish:
+• black → Negro
+• μαύρο → Negro
+• noir → Negro
+
+If target_language = French:
+• black → Noir
+• μαύρο → Noir
+
+Standard colors to use (translate to target language equivalent):
+Black, White, Red, Blue, Green, Pink, Beige, Brown, Grey, Navy,
+Burgundy, Purple, Orange, Yellow, Gold, Silver, Cream, Tan.
 
 If a color is overly creative (e.g., "Midnight Ocean Breeze", "Dusty Rose Petal"),
-simplify to the closest standard color (e.g., "Navy", "Pink").
-
-Use ONLY standard colors: Black, White, Red, Blue, Green, Pink, Beige, Brown,
-Grey, Navy, Burgundy, Purple, Orange, Yellow, Gold, Silver, Cream, Tan.
+simplify to the closest standard color in the target language.
 
 3. DO-NOT-TOUCH FIELDS
 
