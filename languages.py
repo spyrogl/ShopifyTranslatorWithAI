@@ -108,6 +108,7 @@ ALL_LANGUAGES = {
     'latin': {'name': 'Latina (Latin)', 'code': 'la', 'native': 'Latina'},
 }
 
+
 def get_simple_translation_prompt() -> str:
     """
     Returns a simple translation prompt for field-by-field translation.
@@ -148,6 +149,12 @@ RULES:
    - Return ONLY the translated text
    - No markdown, no explanations
    - Keep the same structure and formatting
+
+7. TITLE LENGTH LIMIT (CRITICAL):
+   - If field_type is Title, the translation MUST be LESS THAN 250 characters
+   - Keep titles concise and impactful
+   - Remove unnecessary words if needed to stay under 250 characters
+   - NEVER exceed 250 characters for titles
 
 Example CONFIG usage:
 - If CONFIG says target_language: es, translate "Suurus" → "Talla"

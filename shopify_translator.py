@@ -631,6 +631,12 @@ TEXT TO TRANSLATE
             # Validate translation before caching
             validated_translation = self.validate_translation(text, translated, field_name)
 
+            # Enforce 250 character limit for Title fields
+            if field_name == 'Title' and len(validated_translation) > 250:
+                # Truncate to 247 chars and add "..."
+                validated_translation = validated_translation[:247] + "..."
+                self.print_warning(f"Title truncated to 250 chars: {validated_translation[:50]}...")
+
             # Update cost tracking
             self.total_tokens += response.usage.total_tokens
 
